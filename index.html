@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,23 +166,29 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
 }
 .connector.tracking-mode .pin.done .outer{ box-shadow:0 0 8px rgba(0,200,80,0.3); }
 
-/* Shared pin indicator */
+/* Shared pin indicator — multiple cables combined to one pin (C3+C4+C5-S) */
 .pin.shared-pin .outer{ border:2px dashed rgba(255,200,0,0.5); }
+
+/* Split pin indicator — same wire split across multiple pins (C23-S on Pin 1 & Pin 40) */
+.pin.split-pin .outer{ border:2px dotted rgba(0,200,255,0.6); }
+.pin.split-pin.shared-pin .outer{ border:2px dashed rgba(255,150,0,0.6); }
 
 /* NC (Not Connected) pin */
 .pin.nc-pin{
-    opacity:0.3;
+    opacity:0.75;
     cursor:default;
 }
 .pin.nc-pin .outer{
-    background:#1a202c !important;
-    border:2px dashed rgba(255,255,255,0.15);
+    background:repeating-conic-gradient(#1a202c 0% 25%, #2d3748 0% 50%) 50% / 8px 8px;
+    border:2px dashed rgba(255,80,80,0.4);
     box-shadow:none;
 }
 .pin.nc-pin .inner{
-    background:#1a202c !important;
-    color:#4a5568 !important;
-    font-size:9px;
+    background:rgba(26,32,44,0.9) !important;
+    color:#e86060 !important;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
 }
 
 .outer{
@@ -302,8 +309,10 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
     .pin.done .outer::after{ display:none; }
     .connector.tracking-mode .pin.done .outer::after{ display:flex; color:rgba(0,150,60,0.7); }
     .pin.nc-pin{ opacity:0.2; }
-    .pin.nc-pin .outer{ background:#ddd !important; border-color:#999; }
-    .pin.nc-pin .inner{ background:#ddd !important; color:#999 !important; }
+    .pin.nc-pin { opacity:0.6; }
+    .pin.nc-pin .outer{ background:#eee !important; border:2px dashed #cc4444 !important; }
+    .pin.nc-pin .inner{ background:#f5f5f5 !important; color:#cc4444 !important; }
+    .pin.split-pin .outer{ border:2px dotted #3399cc !important; }
     .notes-panel{ background:#f0ead8; border-color:#999; }
     .notes-panel h3{ color:#8a6010; }
     .note-pin{ color:#1a3a5a; }
@@ -314,13 +323,6 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
 </style>
 </head>
 <body>
-
-<!-- Site Navigation -->
-<nav style="display:flex;justify-content:center;gap:16px;padding:10px 16px;background:rgba(12,25,45,0.95);border-bottom:1px solid #1a3a5a;">
-    <a href="index.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.85rem;color:#fff;background:#1a3a6a;border:1px solid #3a7bd5;border-radius:6px;text-decoration:none;">D-Sub 78 Pin Mapper</a>
-    <a href="universal_viewer.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#3a7bd5';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a4a6e';this.style.color='#a0c4e8'">Universal Viewer</a>
-    <a href="csv_generator.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#3a7bd5';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a4a6e';this.style.color='#a0c4e8'">CSV Generator</a>
-</nav>
 
 <h2>D-Sub 78 Pin Mapper
     <span id="viewBadge" class="badge">REAR VIEW</span>
@@ -573,14 +575,38 @@ function shortenName(name){
     return name.substring(0, 6) + "…";
 }
 
-// Auto-generate description for shared pins
-function autoDescription(data){
+// Auto-generate description for shared/split pins
+function autoDescription(data, pinNum){
     if(data.description) return data.description;
     const groups = getAllCableGroups(data.name);
     if(groups.length > 1){
         return `Shield shared between ${groups.join(", ")} cables`;
     }
+    // Check for split pins (same wire name on multiple pins)
+    const splitPins = getSplitPins(data.name);
+    if(splitPins && splitPins.length > 1){
+        const otherPins = splitPins.filter(p => p !== pinNum);
+        return `Wire split across Pin ${splitPins.join(", Pin ")}`;
+    }
     return "";
+}
+
+// Build map of wire names → [pin numbers] to detect splits
+let splitPinMap = {};
+function buildSplitPinMap(){
+    splitPinMap = {};
+    for(const [pin, data] of Object.entries(pinData)){
+        if(isNC(data) || !data.name) continue;
+        const name = data.name;
+        if(!splitPinMap[name]) splitPinMap[name] = [];
+        splitPinMap[name].push(Number(pin));
+    }
+}
+function getSplitPins(name){
+    return splitPinMap[name] || [];
+}
+function isSplitPin(name){
+    return (splitPinMap[name] || []).length > 1;
 }
 
 // === Init ===
@@ -600,6 +626,7 @@ function initData(){
     }
     updateSourceBadge();
     buildCableGroups();
+    buildSplitPinMap();
     buildDropdown();
     buildConnector();
     updateProgress();
@@ -706,10 +733,17 @@ function buildConnector(){
                 pin.title = `Pin ${pinNumber} (NC — Not Connected)`;
             }
 
-            // Mark shared pins
+            // Mark shared pins (multiple cables → one pin)
             if(!pinIsNC && data && isSharedPin(data.name)){
                 pin.classList.add("shared-pin");
                 pin.title = `Pin ${pinNumber}: ${data.name} (SHARED)`;
+            }
+
+            // Mark split pins (same wire → multiple pins)
+            if(!pinIsNC && data && isSplitPin(data.name)){
+                pin.classList.add("split-pin");
+                const otherPins = getSplitPins(data.name).filter(p => p !== pinNumber);
+                pin.title = `Pin ${pinNumber}: ${data.name} (SPLIT → also Pin ${otherPins.join(", ")})`;
             }
 
             // Restore done (skip NC)
@@ -762,10 +796,12 @@ function applyPinColors(data, outer, inner){
         return;
     }
     if(isNC(data)){
-        outer.style.background = "#1a202c";
-        inner.style.background = "#1a202c";
+        outer.style.background = "";
+        inner.style.background = "";
         inner.innerText = "NC";
-        inner.style.color = "#4a5568";
+        inner.style.color = "#e86060";
+        inner.style.fontSize = "10px";
+        inner.style.letterSpacing = "1px";
         return;
     }
     inner.innerText = shortenName(data.name);
@@ -916,9 +952,10 @@ function buildLegend(cables){
             if(!d) return;
             const c = resolveColor(d.color || d.outer_color || "");
             const shared = isSharedPin(d.name) ? " ⚡" : "";
+            const split = isSplitPin(d.name) ? " ↔" : "";
             const item = document.createElement("span");
             item.className = "legend-item" + (isTracking && doneState[p] ? " is-done" : "");
-            item.innerHTML = `<span class="legend-dot" style="background:${c}"></span>Pin ${p}: ${d.name}${shared}${isTracking && doneState[p]?" ✓":""}`;
+            item.innerHTML = `<span class="legend-dot" style="background:${c}"></span>Pin ${p}: ${d.name}${shared}${split}${isTracking && doneState[p]?" ✓":""}`;
             cableLegend.appendChild(item);
         });
     });
@@ -951,7 +988,7 @@ function updateNotes(filterVal){
     relevantPins.forEach(p => {
         const d = pinData[p];
         if(!d) return;
-        const desc = autoDescription(d);
+        const desc = autoDescription(d, p);
         if(!desc) return;
 
         hasNotes = true;
@@ -962,11 +999,15 @@ function updateNotes(filterVal){
         const sharedList = groups.length > 1
             ? `<span class="shared-cables">${groups.join(", ")}</span>`
             : "";
+        const splitPins = getSplitPins(d.name);
+        const splitInfo = splitPins.length > 1
+            ? `<span class="shared-cables">Pin ${splitPins.join(", Pin ")}</span>`
+            : "";
 
         item.innerHTML = `
             <span class="note-pin">Pin ${p}</span>
             <span class="note-name">${d.name}</span>
-            <span class="note-desc">${desc}${sharedList ? " → " + sharedList : ""}</span>
+            <span class="note-desc">${desc}${sharedList ? " → " + sharedList : ""}${splitInfo ? " → " + splitInfo : ""}</span>
         `;
         notesContent.appendChild(item);
     });
@@ -1112,6 +1153,7 @@ function parseCSVFile(file){
 
             updateSourceBadge();
             buildCableGroups();
+            buildSplitPinMap();
             buildDropdown();
             buildConnector();
             updateProgress();
