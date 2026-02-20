@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Connector Pin CSV Generator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:#0a1628;color:#e0e8f0;min-height:100vh;}
+
+/* Header */
+.header{
+    padding:16px 24px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid #1a3a5a;background:rgba(12,25,45,0.9);
+}
+.header h1{font-size:1.3rem;color:#c8daf0;font-weight:700;letter-spacing:0.5px;}
+.header .badge{
+    padding:4px 12px;background:linear-gradient(135deg,#f0a030,#e08820);
+    color:#1a1a1a;font-weight:700;font-size:0.7rem;border-radius:20px;
+    text-transform:uppercase;letter-spacing:0.5px;margin-left:10px;
+}
+
+/* Stepper */
+.stepper{
+    display:flex;justify-content:center;gap:0;padding:16px 24px;
+    border-bottom:1px solid #1a3a5a;background:rgba(15,30,50,0.6);
+}
+.step-item{
+    display:flex;align-items:center;gap:8px;padding:8px 20px;
+    cursor:pointer;border-radius:8px;transition:all 0.3s;position:relative;
+}
+.step-item.active{background:rgba(58,123,213,0.15);}
+.step-item.completed .step-num{background:#1b8a3a;border-color:#2ecc71;}
+.step-num{
+    width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-weight:700;font-size:0.8rem;
+    border:2px solid #2a4a6e;background:#12253e;color:#a0c4e8;transition:all 0.3s;
+}
+.step-item.active .step-num{border-color:#3a7bd5;background:#1a3a6a;color:#fff;}
+.step-label{font-size:0.82rem;font-weight:600;color:#6a8ab0;white-space:nowrap;}
+.step-item.active .step-label{color:#a0c4e8;}
+.step-arrow{color:#2a4a6e;margin:0 4px;font-size:1.2rem;}
+
+/* Content area */
+.content{padding:20px 24px;max-width:1200px;margin:0 auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* Cards */
+.card{
+    background:rgba(18,37,62,0.7);border:1px solid #1a3a5a;border-radius:12px;
+    padding:20px;margin-bottom:16px;
+}
+.card h3{
+    font-size:0.95rem;color:#8ac4f0;font-weight:700;margin-bottom:12px;
+    text-transform:uppercase;letter-spacing:1px;
+}
+.card-subtitle{font-size:0.8rem;color:#5a7a98;margin-bottom:16px;}
+
+/* Connector grid */
+.connector-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;
+}
+.conn-option{
+    padding:14px;background:#12253e;border:2px solid #1a3a5a;border-radius:10px;
+    cursor:pointer;transition:all 0.2s;text-align:center;
+}
+.conn-option:hover{border-color:#3a7bd5;background:#1a3556;}
+.conn-option.selected{border-color:#3a7bd5;background:rgba(58,123,213,0.15);box-shadow:0 0 12px rgba(58,123,213,0.2);}
+.conn-option .conn-name{font-weight:700;font-size:0.9rem;color:#a0c4e8;}
+.conn-option .conn-detail{font-size:0.72rem;color:#5a7a98;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.conn-option .conn-icon{font-size:1.6rem;margin-bottom:6px;}
+
+/* Custom layout input */
+.custom-layout{display:none;margin-top:16px;}
+.custom-layout.visible{display:block;}
+
+/* Form elements */
+input,select,textarea{
+    font-family:'Outfit',sans-serif;padding:8px 12px;
+    border:1px solid #2a4a6e;background:#12253e;color:#a0c4e8;
+    border-radius:6px;font-size:0.82rem;transition:all 0.2s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,213,0.3);}
+input::placeholder{color:#3a5a78;}
+
+label{font-size:0.78rem;font-weight:600;color:#6a8ab0;display:block;margin-bottom:4px;}
+
+/* Buttons */
+button{
+    padding:8px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.82rem;
+    cursor:pointer;border:1px solid #2a4a6e;background:#12253e;color:#a0c4e8;
+    border-radius:6px;transition:all 0.2s;white-space:nowrap;
+}
+button:hover{background:#1a3556;border-color:#3a7bd5;color:#fff;}
+.btn-primary{background:#1a3a6a;border-color:#3a7bd5;color:#fff;}
+.btn-primary:hover{background:#2a5090;}
+.btn-success{background:#1b6a3a;border-color:#2ecc71;color:#fff;}
+.btn-success:hover{background:#1b8a3a;}
+.btn-danger{border-color:#6e2a2a;color:#e8a0a0;background:#2e1218;}
+.btn-danger:hover{background:#4a1a22;border-color:#d53a3a;color:#fff;}
+.btn-sm{padding:5px 10px;font-size:0.75rem;}
+
+/* Cable table */
+.cable-table{width:100%;border-collapse:collapse;margin-top:10px;}
+.cable-table th{
+    text-align:left;padding:8px 10px;font-size:0.72rem;color:#5a7a98;
+    text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a3a5a;
+}
+.cable-table td{
+    padding:6px 10px;border-bottom:1px solid rgba(26,58,90,0.4);
+    font-family:'JetBrains Mono',monospace;font-size:0.78rem;
+}
+.cable-table tr:hover{background:rgba(58,123,213,0.05);}
+.cable-table input,.cable-table select{width:100%;padding:6px 8px;font-size:0.78rem;}
+
+/* Pin table */
+.pin-table-wrap{max-height:60vh;overflow-y:auto;border:1px solid #1a3a5a;border-radius:8px;}
+.pin-table{width:100%;border-collapse:collapse;}
+.pin-table th{
+    position:sticky;top:0;z-index:10;
+    text-align:left;padding:8px 10px;font-size:0.72rem;color:#5a7a98;
+    text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a3a5a;
+    background:#0f2038;
+}
+.pin-table td{
+    padding:4px 6px;border-bottom:1px solid rgba(26,58,90,0.3);
+    font-family:'JetBrains Mono',monospace;font-size:0.78rem;
+}
+.pin-table tr:hover{background:rgba(58,123,213,0.05);}
+.pin-table tr.nc-row{opacity:0.4;}
+.pin-table tr.nc-row td{color:#4a6a88;}
+.pin-table input,.pin-table select{width:100%;padding:5px 6px;font-size:0.76rem;}
+.pin-table .pin-num{
+    font-weight:700;color:#8ac4f0;text-align:center;width:40px;min-width:40px;
+}
+.pin-table .color-preview{
+    width:16px;height:16px;border-radius:50%;display:inline-block;
+    border:1px solid rgba(255,255,255,0.2);vertical-align:middle;margin-right:4px;
+}
+.pin-table .nc-toggle{cursor:pointer;width:20px;text-align:center;}
+
+/* Inline row group */
+.form-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;}
+.form-group{flex:1;min-width:120px;}
+
+/* Color presets */
+.color-presets{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.color-swatch{
+    width:22px;height:22px;border-radius:50%;cursor:pointer;
+    border:2px solid transparent;transition:all 0.2s;
+}
+.color-swatch:hover{border-color:#fff;transform:scale(1.15);}
+.color-swatch.selected{border-color:#3a7bd5;box-shadow:0 0 6px rgba(58,123,213,0.5);}
+
+/* Summary stats */
+.summary-stats{
+    display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px;
+}
+.stat-card{
+    flex:1;min-width:120px;padding:14px;background:#12253e;
+    border:1px solid #1a3a5a;border-radius:10px;text-align:center;
+}
+.stat-value{font-size:1.6rem;font-weight:700;color:#8ac4f0;font-family:'JetBrains Mono',monospace;}
+.stat-label{font-size:0.72rem;color:#5a7a98;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+
+/* Export preview */
+.csv-preview{
+    background:#0a1020;border:1px solid #1a3a5a;border-radius:8px;
+    padding:14px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;
+    color:#6a9ac0;max-height:300px;overflow-y:auto;white-space:pre;line-height:1.6;
+}
+
+/* Bottom nav */
+.bottom-nav{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 0;margin-top:16px;border-top:1px solid #1a3a5a;
+}
+
+/* Auto-suggest dropdown */
+.suggestions{
+    position:absolute;top:100%;left:0;right:0;z-index:100;
+    background:#12253e;border:1px solid #2a4a6e;border-radius:6px;
+    max-height:150px;overflow-y:auto;display:none;
+}
+.suggestions.visible{display:block;}
+.suggestion-item{
+    padding:6px 10px;cursor:pointer;font-size:0.76rem;
+    font-family:'JetBrains Mono',monospace;color:#a0c4e8;
+}
+.suggestion-item:hover{background:rgba(58,123,213,0.15);}
+
+/* Wire color tags */
+.wire-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.wire-tag{
+    padding:2px 6px;border-radius:4px;font-size:0.65rem;
+    font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:3px;
+}
+.wire-tag .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* Bulk assign panel */
+.bulk-panel{
+    background:rgba(26,58,90,0.3);border:1px solid #1a3a5a;border-radius:8px;
+    padding:14px;margin-bottom:16px;display:none;
+}
+.bulk-panel.visible{display:block;}
+
+/* Toast */
+.toast{
+    position:fixed;bottom:20px;right:20px;padding:12px 20px;
+    background:#1b8a3a;color:#fff;border-radius:8px;font-weight:600;
+    font-size:0.85rem;z-index:1000;opacity:0;transition:opacity 0.3s;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+.toast.visible{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- Site Navigation -->
+<nav style="display:flex;justify-content:center;gap:16px;padding:10px 16px;background:rgba(12,25,45,0.95);border-bottom:1px solid #1a3a5a;">
+    <a href="index.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#3a7bd5';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a4a6e';this.style.color='#a0c4e8'">D-Sub 78 Pin Mapper</a>
+    <a href="universal_viewer.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#3a7bd5';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a4a6e';this.style.color='#a0c4e8'">Universal Viewer</a>
+    <a href="csv_generator.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.85rem;color:#fff;background:#1a3a6a;border:1px solid #3a7bd5;border-radius:6px;text-decoration:none;">CSV Generator</a>
+</nav>
+
+<!-- Header -->
+<div class="header">
+    <div>
+        <h1>📋 Connector Pin CSV Generator <span class="badge">WIZARD</span></h1>
+    </div>
+    <div style="display:flex;gap:8px;">
+        <button onclick="importCSV()">📂 Import CSV</button>
+        <button class="btn-viewer" onclick="openInViewer()" style="background:#1b6a3a;border-color:#2ecc71;color:#fff;">🔗 Open Viewer</button>
+    </div>
+</div>
+<input type="file" id="importFile" accept=".csv,.txt" style="display:none" onchange="handleImport(event)">
+
+<!-- Stepper -->
+<div class="stepper">
+    <div class="step-item active" onclick="goToStep(1)">
+        <div class="step-num">1</div>
+        <span class="step-label">Connector Type</span>
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" onclick="goToStep(2)">
+        <div class="step-num">2</div>
+        <span class="step-label">Define Cables</span>
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" onclick="goToStep(3)">
+        <div class="step-num">3</div>
+        <span class="step-label">Pin Assignment</span>
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" onclick="goToStep(4)">
+        <div class="step-num">4</div>
+        <span class="step-label">Export</span>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+<!-- ===== STEP 1: Connector Type ===== -->
+<div class="panel active" id="step1">
+    <div class="card">
+        <h3>D-Sub Connectors</h3>
+        <div class="connector-grid" id="dsubGrid"></div>
+    </div>
+    <div class="card">
+        <h3>Round / Circular Connectors</h3>
+        <div class="connector-grid" id="roundGrid"></div>
+    </div>
+    <div class="card">
+        <h3>Custom Connector</h3>
+        <p class="card-subtitle">Enter total pins and row layout manually</p>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Total Pins</label>
+                <input type="number" id="customPins" min="1" max="200" placeholder="e.g. 78" oninput="updateCustomPreview()">
+            </div>
+            <div class="form-group">
+                <label>Row Layout (comma-separated)</label>
+                <input type="text" id="customRows" placeholder="e.g. 20,19,20,19" oninput="updateCustomPreview()">
+            </div>
+            <div class="form-group">
+                <label>Shape</label>
+                <select id="customShape">
+                    <option value="dsub">D-Sub (trapezoidal)</option>
+                    <option value="round">Round (circular)</option>
+                    <option value="linear">Linear (single row)</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:0;">
+                <label>&nbsp;</label>
+                <button class="btn-primary" onclick="selectCustom()">Use Custom</button>
+            </div>
+        </div>
+        <div id="customPreview" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#5a7a98;margin-top:8px;"></div>
+    </div>
+    <div class="bottom-nav">
+        <div></div>
+        <button class="btn-primary" onclick="goToStep(2)">Next: Define Cables →</button>
+    </div>
+</div>
+
+<!-- ===== STEP 2: Define Cables ===== -->
+<div class="panel" id="step2">
+    <div class="card">
+        <h3>Cable Inventory</h3>
+        <p class="card-subtitle">Define cables before assigning pins. Cable wires will auto-suggest during pin assignment.</p>
+        <div class="form-row">
+            <div class="form-group" style="max-width:100px;">
+                <label>Cable Name</label>
+                <input type="text" id="newCableName" placeholder="C1">
+            </div>
+            <div class="form-group" style="max-width:160px;">
+                <label>Cable Type</label>
+                <select id="newCableType">
+                    <option value="Coaxial">Coaxial</option>
+                    <option value="2-core cable">2-core cable</option>
+                    <option value="4-core cable">4-core cable</option>
+                    <option value="7-core cable">7-core cable</option>
+                    <option value="10-core cable">10-core cable</option>
+                    <option value="20-core cable">20-core cable</option>
+                    <option value="custom">Custom...</option>
+                </select>
+            </div>
+            <div class="form-group" style="max-width:80px;">
+                <label>Cores</label>
+                <input type="number" id="newCableCores" min="1" max="50" value="2">
+            </div>
+            <div class="form-group" style="flex:0;">
+                <label>&nbsp;</label>
+                <button class="btn-success btn-sm" onclick="addCable()">+ Add Cable</button>
+            </div>
+        </div>
+        <div style="margin-top:8px;">
+            <label>Quick Add Range:</label>
+            <div class="form-row" style="margin-top:4px;">
+                <input type="text" id="quickFrom" placeholder="C1" style="width:70px;">
+                <span style="color:#5a7a98;align-self:center;">to</span>
+                <input type="text" id="quickTo" placeholder="C15" style="width:70px;">
+                <select id="quickType" style="width:140px;">
+                    <option value="Coaxial">Coaxial</option>
+                    <option value="2-core cable">2-core cable</option>
+                    <option value="4-core cable">4-core cable</option>
+                    <option value="20-core cable">20-core cable</option>
+                </select>
+                <button class="btn-sm" onclick="quickAddCables()">Add Range</button>
+            </div>
+        </div>
+        <table class="cable-table" id="cableTable">
+            <thead>
+                <tr>
+                    <th>Cable</th><th>Type</th><th>Cores</th>
+                    <th>Wire Colors</th><th>Assigned</th><th></th>
+                </tr>
+            </thead>
+            <tbody id="cableTableBody"></tbody>
+        </table>
+    </div>
+    <div class="bottom-nav">
+        <button onclick="goToStep(1)">← Back</button>
+        <button class="btn-primary" onclick="goToStep(3)">Next: Pin Assignment →</button>
+    </div>
+</div>
+
+<!-- ===== STEP 3: Pin Assignment ===== -->
+<div class="panel" id="step3">
+    <!-- Bulk assign -->
+    <div class="card" style="padding:12px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button class="btn-sm" onclick="toggleBulk()">⚡ Bulk Assign</button>
+                <button class="btn-sm" onclick="clearAllPins()">🗑 Clear All</button>
+                <span style="font-size:0.75rem;color:#5a7a98;" id="assignStats"></span>
+            </div>
+            <div style="font-size:0.78rem;color:#5a7a98;font-family:'JetBrains Mono',monospace;" id="connectorInfo"></div>
+        </div>
+    </div>
+
+    <!-- Bulk panel -->
+    <div class="bulk-panel" id="bulkPanel">
+        <div class="form-row">
+            <div class="form-group" style="max-width:120px;">
+                <label>Cable</label>
+                <select id="bulkCable" onchange="updateBulkPreview()"></select>
+            </div>
+            <div class="form-group" style="max-width:80px;">
+                <label>Start Pin</label>
+                <input type="number" id="bulkStart" min="1" value="1" onchange="updateBulkPreview()">
+            </div>
+            <div class="form-group" style="max-width:200px;">
+                <label>Assignment Order</label>
+                <select id="bulkOrder">
+                    <option value="sequential">Sequential (S, 1, 2, 3...)</option>
+                    <option value="shield-first">Shield first, then cores</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:0;">
+                <label>&nbsp;</label>
+                <button class="btn-success btn-sm" onclick="bulkAssign()">Assign</button>
+            </div>
+        </div>
+        <div id="bulkPreview" style="font-size:0.72rem;color:#5a7a98;font-family:'JetBrains Mono',monospace;margin-top:4px;"></div>
+    </div>
+
+    <!-- Pin table -->
+    <div class="pin-table-wrap">
+        <table class="pin-table" id="pinTable">
+            <thead>
+                <tr>
+                    <th style="width:40px">Pin</th>
+                    <th>NC</th>
+                    <th style="min-width:140px">Name</th>
+                    <th style="min-width:120px">Outer Color</th>
+                    <th style="min-width:120px">Inner Color</th>
+                    <th style="min-width:100px">Cable Type</th>
+                    <th style="min-width:140px">Description</th>
+                </tr>
+            </thead>
+            <tbody id="pinTableBody"></tbody>
+        </table>
+    </div>
+    <div class="bottom-nav">
+        <button onclick="goToStep(2)">← Back</button>
+        <button class="btn-primary" onclick="goToStep(4)">Next: Export →</button>
+    </div>
+</div>
+
+<!-- ===== STEP 4: Export ===== -->
+<div class="panel" id="step4">
+    <div class="summary-stats" id="summaryStats"></div>
+    <div class="card">
+        <h3>CSV Preview</h3>
+        <div class="csv-preview" id="csvPreview"></div>
+    </div>
+    <div class="card">
+        <h3>Export Options</h3>
+        <div class="form-row">
+            <button class="btn-success" onclick="downloadCSV()">📥 Download CSV</button>
+            <button class="btn-primary" onclick="openInViewer()">🔗 Open in Viewer</button>
+            <button onclick="copyCSV()">📋 Copy to Clipboard</button>
+        </div>
+        <div class="form-row" style="margin-top:12px;">
+            <div class="form-group" style="max-width:200px;">
+                <label>Filename</label>
+                <input type="text" id="exportFilename" value="pinmap.csv">
+            </div>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <button onclick="goToStep(3)">← Back</button>
+        <div></div>
+    </div>
+</div>
+
+</div><!-- end content -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONNECTOR PRESETS =====
+const connectorPresets = {
+    dsub: [
+        {name:"D-Sub 9", pins:9, rows:[5,4], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 15", pins:15, rows:[8,7], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 25", pins:25, rows:[13,12], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 37", pins:37, rows:[19,18], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 50", pins:50, rows:[17,16,17], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 62", pins:62, rows:[21,20,21], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 78", pins:78, rows:[20,19,20,19], shape:"dsub", icon:"▯"},
+        {name:"D-Sub 104", pins:104, rows:[21,20,21,20,22], shape:"dsub", icon:"▯"},
+    ],
+    round: [
+        {name:"Round 4-pin", pins:4, rows:[4], shape:"round", icon:"◉"},
+        {name:"Round 7-pin", pins:7, rows:[1,6], shape:"round", icon:"◉"},
+        {name:"Round 12-pin", pins:12, rows:[12], shape:"round", icon:"◉"},
+        {name:"Round 19-pin", pins:19, rows:[1,6,12], shape:"round", icon:"◉"},
+        {name:"Round 24-pin", pins:24, rows:[24], shape:"round", icon:"◉"},
+        {name:"Round 37-pin", pins:37, rows:[1,6,12,18], shape:"round", icon:"◉"},
+    ]
+};
+
+// ===== COLOR PRESETS =====
+const namedColors = {
+    "Red":"#e53935","Blue":"#1976d2","Green":"#388e3c","Yellow":"#fdd835",
+    "White":"#f7fafc","Black":"#1a202c","Brown":"#795548","Orange":"#ff9800",
+    "Pink":"#e91e63","Violet":"#9c27b0","Grey":"#a0aec0","Dark Grey":"#37474f",
+    "Light Blue":"#4fc3f7","Dark Pink":"#ad1457","Cyan":"#00bcd4",
+    "Shield":"#4a5568","Signal":"#00bcd4"
+};
+
+// Standard wire color sequences
+const colorSequences = {
+    "2-core cable": ["Red","Blue"],
+    "4-core cable": ["Red","Blue","Green","Yellow"],
+    "7-core cable": ["Red","Blue","Green","Yellow","Brown","White","Black"],
+    "10-core cable": ["Red","Blue","Green","Yellow","Brown","White","Black","Pink","Grey","Violet"],
+    "20-core cable": ["White","Brown","Green","Yellow","Grey","Pink","Blue","Red","Black","Violet",
+                       "Grey/Pink","Red/Blue","White/Green","Brown/Green","White/Yellow",
+                       "Yellow/Brown","White/Grey","Grey/Brown","White/Pink","Pink/Brown"],
+    "Coaxial": ["Signal"]
+};
+
+// ===== STATE =====
+let currentStep = 1;
+let selectedConnector = null;
+let cables = []; // {name, type, cores, colors:[]}
+let pinAssignments = []; // [{pin, name, outerColor, innerColor, cableType, description, nc}]
+
+// ===== INIT =====
+function init(){
+    buildConnectorGrid("dsubGrid", connectorPresets.dsub);
+    buildConnectorGrid("roundGrid", connectorPresets.round);
+    setupCableTypeListener();
+}
+
+function buildConnectorGrid(containerId, presets){
+    const grid = document.getElementById(containerId);
+    presets.forEach(p => {
+        const el = document.createElement("div");
+        el.className = "conn-option";
+        el.innerHTML = `
+            <div class="conn-icon">${p.icon}</div>
+            <div class="conn-name">${p.name}</div>
+            <div class="conn-detail">${p.pins} pins · Rows: ${p.rows.join("-")}</div>
+        `;
+        el.addEventListener("click", () => selectConnector(p, el));
+        grid.appendChild(el);
+    });
+}
+
+function selectConnector(preset, el){
+    document.querySelectorAll(".conn-option").forEach(e => e.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedConnector = {...preset};
+    showToast(`Selected: ${preset.name} (${preset.pins} pins)`);
+}
+
+function selectCustom(){
+    const pins = parseInt(document.getElementById("customPins").value);
+    const rowsStr = document.getElementById("customRows").value;
+    const shape = document.getElementById("customShape").value;
+    if(!pins || pins < 1){ showToast("Enter valid pin count"); return; }
+    let rows;
+    if(rowsStr.trim()){
+        rows = rowsStr.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        const sum = rows.reduce((a,b)=>a+b,0);
+        if(sum !== pins){ showToast(`Row total (${sum}) doesn't match pin count (${pins})`); return; }
+    } else {
+        rows = [pins]; // single row
+    }
+    document.querySelectorAll(".conn-option").forEach(e => e.classList.remove("selected"));
+    selectedConnector = {name:"Custom", pins, rows, shape, icon:"⚙"};
+    showToast(`Custom connector: ${pins} pins, rows: ${rows.join("-")}`);
+}
+
+function updateCustomPreview(){
+    const pins = document.getElementById("customPins").value;
+    const rows = document.getElementById("customRows").value;
+    const el = document.getElementById("customPreview");
+    if(pins && rows){
+        const arr = rows.split(",").map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+        const sum = arr.reduce((a,b)=>a+b,0);
+        const match = sum === parseInt(pins);
+        el.innerHTML = `Total from rows: ${sum} ${match ? "✓" : `≠ ${pins} ✗`}`;
+        el.style.color = match ? "#2ecc71" : "#e53935";
+    } else el.innerHTML = "";
+}
+
+// ===== STEP NAVIGATION =====
+function goToStep(step){
+    if(step >= 2 && !selectedConnector){ showToast("Select a connector type first"); return; }
+    if(step === 3) buildPinTable();
+    if(step === 4) buildExportPreview();
+
+    currentStep = step;
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("step"+step).classList.add("active");
+
+    document.querySelectorAll(".step-item").forEach((s,i) => {
+        s.classList.remove("active");
+        s.classList.toggle("completed", i+1 < step);
+        if(i+1 === step) s.classList.add("active");
+    });
+}
+
+// ===== STEP 2: CABLES =====
+function setupCableTypeListener(){
+    const typeSelect = document.getElementById("newCableType");
+    const coresInput = document.getElementById("newCableCores");
+    typeSelect.addEventListener("change", () => {
+        const v = typeSelect.value;
+        const map = {"Coaxial":1,"2-core cable":2,"4-core cable":4,"7-core cable":7,"10-core cable":10,"20-core cable":20};
+        if(map[v]) coresInput.value = map[v];
+    });
+}
+
+function addCable(){
+    const name = document.getElementById("newCableName").value.trim();
+    const type = document.getElementById("newCableType").value;
+    const cores = parseInt(document.getElementById("newCableCores").value) || 2;
+    if(!name){ showToast("Enter cable name"); return; }
+    if(cables.find(c => c.name === name)){ showToast(`Cable ${name} already exists`); return; }
+
+    const colors = (colorSequences[type] || []).slice(0, cores);
+    // Always add Shield as first wire for coax/multi-core
+    const hasShield = type !== "custom";
+
+    cables.push({name, type, cores, colors, hasShield});
+    document.getElementById("newCableName").value = "";
+    autoIncrementCableName();
+    renderCableTable();
+    showToast(`Added ${name} (${type})`);
+}
+
+function autoIncrementCableName(){
+    if(cables.length === 0) return;
+    const last = cables[cables.length-1].name;
+    const m = last.match(/^([A-Za-z]+)(\d+)$/);
+    if(m) document.getElementById("newCableName").value = m[1] + (parseInt(m[2])+1);
+}
+
+function quickAddCables(){
+    const from = document.getElementById("quickFrom").value.trim();
+    const to = document.getElementById("quickTo").value.trim();
+    const type = document.getElementById("quickType").value;
+    const mFrom = from.match(/^([A-Za-z]+)(\d+)$/);
+    const mTo = to.match(/^([A-Za-z]+)(\d+)$/);
+    if(!mFrom || !mTo || mFrom[1] !== mTo[1]){ showToast("Invalid range. Use same prefix (e.g. C1 to C15)"); return; }
+    const prefix = mFrom[1];
+    const start = parseInt(mFrom[2]);
+    const end = parseInt(mTo[2]);
+    const map = {"Coaxial":1,"2-core cable":2,"4-core cable":4,"20-core cable":20};
+    const cores = map[type] || 2;
+    let added = 0;
+    for(let i=start; i<=end; i++){
+        const name = prefix + i;
+        if(!cables.find(c => c.name === name)){
+            const colors = (colorSequences[type] || []).slice(0, cores);
+            cables.push({name, type, cores, colors, hasShield: type !== "custom"});
+            added++;
+        }
+    }
+    renderCableTable();
+    showToast(`Added ${added} cables (${prefix}${start}–${prefix}${end})`);
+}
+
+function removeCable(idx){
+    cables.splice(idx, 1);
+    renderCableTable();
+}
+
+function renderCableTable(){
+    const tbody = document.getElementById("cableTableBody");
+    tbody.innerHTML = "";
+    cables.forEach((c, idx) => {
+        const assigned = pinAssignments.filter(p => p.name && p.name.startsWith(c.name+"-")).length;
+        const totalWires = c.cores + (c.hasShield ? 1 : 0);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td style="font-weight:700;color:#8ac4f0;">${c.name}</td>
+            <td>${c.type}</td>
+            <td>${c.cores} ${c.hasShield?'+ Shield':''}</td>
+            <td>
+                <div class="wire-tags">
+                    ${c.hasShield ? '<span class="wire-tag"><span class="dot" style="background:#4a5568"></span>S</span>' : ''}
+                    ${c.colors.map((col,i) => {
+                        const resolved = resolveColorHex(col);
+                        return `<span class="wire-tag"><span class="dot" style="background:${resolved}"></span>${i+1}</span>`;
+                    }).join("")}
+                </div>
+            </td>
+            <td>${assigned}/${totalWires}</td>
+            <td><button class="btn-danger btn-sm" onclick="removeCable(${idx})">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    updateBulkCableDropdown();
+}
+
+function resolveColorHex(name){
+    if(!name) return "#e0e0e0";
+    if(name.startsWith("#")) return name;
+    // Handle slash colors
+    if(name.includes("/")){
+        const parts = name.split("/");
+        return resolveColorHex(parts[0]);
+    }
+    const n = name.toLowerCase();
+    const keys = Object.keys(namedColors).sort((a,b) => b.length - a.length);
+    for(const k of keys){ if(n.includes(k.toLowerCase())) return namedColors[k]; }
+    return "#e0e0e0";
+}
+
+// ===== STEP 3: PIN TABLE =====
+function buildPinTable(){
+    if(!selectedConnector) return;
+    const totalPins = selectedConnector.pins;
+
+    // Initialize assignments if needed
+    if(pinAssignments.length !== totalPins){
+        pinAssignments = [];
+        for(let i=1; i<=totalPins; i++){
+            pinAssignments.push({pin:i, name:"", outerColor:"", innerColor:"", cableType:"", description:"", nc:false});
+        }
+    }
+
+    document.getElementById("connectorInfo").textContent =
+        `${selectedConnector.name} · ${totalPins} pins · Rows: ${selectedConnector.rows.join("-")}`;
+
+    renderPinTable();
+}
+
+function renderPinTable(){
+    const tbody = document.getElementById("pinTableBody");
+    tbody.innerHTML = "";
+
+    const colorOptions = Object.keys(namedColors).map(c =>
+        `<option value="${c}">${c}</option>`
+    ).join("");
+
+    pinAssignments.forEach((pa, idx) => {
+        const tr = document.createElement("tr");
+        if(pa.nc) tr.classList.add("nc-row");
+        tr.innerHTML = `
+            <td class="pin-num">${pa.pin}</td>
+            <td class="nc-toggle">
+                <input type="checkbox" ${pa.nc?"checked":""} onchange="toggleNC(${idx},this.checked)" title="Not Connected">
+            </td>
+            <td style="position:relative;">
+                <input type="text" value="${pa.name}" placeholder="e.g. C1-1"
+                    ${pa.nc?"disabled":""}
+                    oninput="updatePinName(${idx},this.value,this)"
+                    onfocus="showSuggestions(${idx},this)"
+                    onblur="setTimeout(()=>hideSuggestions(${idx}),200)">
+                <div class="suggestions" id="suggest_${idx}"></div>
+            </td>
+            <td>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span class="color-preview" id="ocPrev_${idx}" style="background:${resolveColorHex(pa.outerColor)}"></span>
+                    <select ${pa.nc?"disabled":""} onchange="updatePinColor(${idx},'outer',this.value)">
+                        <option value="">—</option>
+                        ${colorOptions}
+                    </select>
+                </div>
+            </td>
+            <td>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span class="color-preview" id="icPrev_${idx}" style="background:${resolveColorHex(pa.innerColor)}"></span>
+                    <select ${pa.nc?"disabled":""} onchange="updatePinColor(${idx},'inner',this.value)">
+                        <option value="">—</option>
+                        ${colorOptions}
+                    </select>
+                </div>
+            </td>
+            <td><input type="text" value="${pa.cableType}" ${pa.nc?"disabled":""} placeholder="auto" onchange="pinAssignments[${idx}].cableType=this.value" style="width:100px;"></td>
+            <td><input type="text" value="${pa.description}" ${pa.nc?"disabled":""} placeholder="optional" onchange="pinAssignments[${idx}].description=this.value"></td>
+        `;
+        // Set selected color dropdowns
+        setTimeout(() => {
+            const selects = tr.querySelectorAll("select");
+            if(selects[0]) selects[0].value = pa.outerColor;
+            if(selects[1]) selects[1].value = pa.innerColor;
+        }, 0);
+        tbody.appendChild(tr);
+    });
+    updateAssignStats();
+}
+
+function toggleNC(idx, checked){
+    pinAssignments[idx].nc = checked;
+    if(checked){
+        pinAssignments[idx].name = "NC";
+        pinAssignments[idx].outerColor = "";
+        pinAssignments[idx].innerColor = "";
+        pinAssignments[idx].cableType = "";
+        pinAssignments[idx].description = "";
+    } else {
+        pinAssignments[idx].name = "";
+    }
+    renderPinTable();
+}
+
+function updatePinName(idx, val, inputEl){
+    pinAssignments[idx].name = val;
+    // Auto-fill cable type from cables array
+    const cableMatch = val.match(/^(C\d+)/);
+    if(cableMatch){
+        const cable = cables.find(c => c.name === cableMatch[1]);
+        if(cable){
+            pinAssignments[idx].cableType = cable.type;
+            // Auto-fill color
+            const wireMatch = val.match(/^C\d+-(.+)$/);
+            if(wireMatch){
+                const wireId = wireMatch[1];
+                if(wireId.toUpperCase() === "S"){
+                    pinAssignments[idx].outerColor = "Shield";
+                    pinAssignments[idx].innerColor = "Shield";
+                } else {
+                    const wireNum = parseInt(wireId);
+                    if(!isNaN(wireNum) && cable.colors[wireNum-1]){
+                        const color = cable.colors[wireNum-1];
+                        if(color.includes("/")){
+                            const parts = color.split("/");
+                            pinAssignments[idx].outerColor = parts[0];
+                            pinAssignments[idx].innerColor = parts[1];
+                        } else {
+                            pinAssignments[idx].outerColor = color;
+                            pinAssignments[idx].innerColor = color;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Update color previews without full re-render
+    const ocEl = document.getElementById("ocPrev_"+idx);
+    const icEl = document.getElementById("icPrev_"+idx);
+    if(ocEl) ocEl.style.background = resolveColorHex(pinAssignments[idx].outerColor);
+    if(icEl) icEl.style.background = resolveColorHex(pinAssignments[idx].innerColor);
+    updateAssignStats();
+}
+
+function updatePinColor(idx, which, val){
+    if(which === "outer"){
+        pinAssignments[idx].outerColor = val;
+        const el = document.getElementById("ocPrev_"+idx);
+        if(el) el.style.background = resolveColorHex(val);
+    } else {
+        pinAssignments[idx].innerColor = val;
+        const el = document.getElementById("icPrev_"+idx);
+        if(el) el.style.background = resolveColorHex(val);
+    }
+}
+
+// ===== SUGGESTIONS =====
+function showSuggestions(idx, inputEl){
+    const val = inputEl.value;
+    const suggestions = generateSuggestions(idx, val);
+    const container = document.getElementById("suggest_"+idx);
+    if(suggestions.length === 0){ container.classList.remove("visible"); return; }
+    container.innerHTML = suggestions.map(s =>
+        `<div class="suggestion-item" onmousedown="applySuggestion(${idx},'${s}')">${s}</div>`
+    ).join("");
+    container.classList.add("visible");
+}
+
+function hideSuggestions(idx){
+    const el = document.getElementById("suggest_"+idx);
+    if(el) el.classList.remove("visible");
+}
+
+function generateSuggestions(idx, typed){
+    const suggestions = [];
+    const usedNames = new Set(pinAssignments.filter((p,i) => i!==idx && p.name).map(p=>p.name));
+
+    cables.forEach(cable => {
+        // Shield
+        const shieldName = cable.name + "-S";
+        if(!usedNames.has(shieldName) && cable.hasShield){
+            if(!typed || shieldName.toLowerCase().startsWith(typed.toLowerCase()))
+                suggestions.push(shieldName);
+        }
+        // Cores
+        for(let w=1; w<=cable.cores; w++){
+            const wireName = cable.name + "-" + w;
+            if(!usedNames.has(wireName)){
+                if(!typed || wireName.toLowerCase().startsWith(typed.toLowerCase()))
+                    suggestions.push(wireName);
+            }
+        }
+    });
+    return suggestions.slice(0, 15);
+}
+
+function applySuggestion(idx, name){
+    pinAssignments[idx].name = name;
+    // Trigger auto-fill
+    const fakeInput = {value: name};
+    updatePinName(idx, name, fakeInput);
+    renderPinTable();
+}
+
+// ===== BULK ASSIGN =====
+function toggleBulk(){
+    document.getElementById("bulkPanel").classList.toggle("visible");
+}
+
+function updateBulkCableDropdown(){
+    const select = document.getElementById("bulkCable");
+    select.innerHTML = cables.map(c => `<option value="${c.name}">${c.name} (${c.type})</option>`).join("");
+}
+
+function updateBulkPreview(){
+    const cableName = document.getElementById("bulkCable").value;
+    const cable = cables.find(c => c.name === cableName);
+    if(!cable){ document.getElementById("bulkPreview").textContent = ""; return; }
+    const wires = [];
+    if(cable.hasShield) wires.push(cableName+"-S");
+    for(let i=1; i<=cable.cores; i++) wires.push(cableName+"-"+i);
+    document.getElementById("bulkPreview").textContent = `Will assign: ${wires.join(", ")} (${wires.length} wires)`;
+}
+
+function bulkAssign(){
+    const cableName = document.getElementById("bulkCable").value;
+    const startPin = parseInt(document.getElementById("bulkStart").value) || 1;
+    const cable = cables.find(c => c.name === cableName);
+    if(!cable){ showToast("Select a cable"); return; }
+
+    const wires = [];
+    if(cable.hasShield) wires.push({suffix:"S", color:"Shield"});
+    for(let i=0; i<cable.cores; i++){
+        const color = cable.colors[i] || "";
+        wires.push({suffix:String(i+1), color});
+    }
+
+    let assigned = 0;
+    let pinIdx = startPin - 1;
+    wires.forEach(wire => {
+        while(pinIdx < pinAssignments.length && (pinAssignments[pinIdx].nc || pinAssignments[pinIdx].name)){
+            pinIdx++;
+        }
+        if(pinIdx >= pinAssignments.length) return;
+        const name = cableName + "-" + wire.suffix;
+        pinAssignments[pinIdx].name = name;
+        pinAssignments[pinIdx].cableType = cable.type;
+        if(wire.color.includes("/")){
+            const parts = wire.color.split("/");
+            pinAssignments[pinIdx].outerColor = parts[0];
+            pinAssignments[pinIdx].innerColor = parts[1];
+        } else {
+            pinAssignments[pinIdx].outerColor = wire.color;
+            pinAssignments[pinIdx].innerColor = wire.color;
+        }
+        assigned++;
+        pinIdx++;
+    });
+
+    renderPinTable();
+    showToast(`Assigned ${assigned} wires from ${cableName}`);
+}
+
+function clearAllPins(){
+    if(!confirm("Clear all pin assignments?")) return;
+    pinAssignments.forEach(p => {
+        p.name = ""; p.outerColor = ""; p.innerColor = "";
+        p.cableType = ""; p.description = ""; p.nc = false;
+    });
+    renderPinTable();
+}
+
+function updateAssignStats(){
+    const total = pinAssignments.length;
+    const assigned = pinAssignments.filter(p => p.name && !p.nc).length;
+    const nc = pinAssignments.filter(p => p.nc).length;
+    const empty = total - assigned - nc;
+    document.getElementById("assignStats").textContent =
+        `${assigned} assigned · ${nc} NC · ${empty} empty`;
+}
+
+// ===== STEP 4: EXPORT =====
+function buildExportPreview(){
+    const total = pinAssignments.length;
+    const assigned = pinAssignments.filter(p => p.name && !p.nc).length;
+    const nc = pinAssignments.filter(p => p.nc).length;
+    const cableCount = new Set(pinAssignments.filter(p=>p.name&&!p.nc).map(p=>{
+        const m=p.name.match(/^(C\d+)/); return m?m[1]:null;
+    }).filter(Boolean)).size;
+
+    document.getElementById("summaryStats").innerHTML = `
+        <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Pins</div></div>
+        <div class="stat-card"><div class="stat-value">${assigned}</div><div class="stat-label">Assigned</div></div>
+        <div class="stat-card"><div class="stat-value">${nc}</div><div class="stat-label">NC (Empty)</div></div>
+        <div class="stat-card"><div class="stat-value">${cableCount}</div><div class="stat-label">Cables</div></div>
+    `;
+
+    document.getElementById("csvPreview").textContent = generateCSVText();
+}
+
+function generateCSVText(){
+    let lines = ["pin,name,outer_color,inner_color,cable_type,description"];
+    pinAssignments.forEach(pa => {
+        if(pa.nc){
+            lines.push(`${pa.pin},NC,,,,`);
+        } else if(pa.name){
+            const desc = (pa.description||"").replace(/,/g,";");
+            lines.push(`${pa.pin},${pa.name},${pa.outerColor},${pa.innerColor},${pa.cableType},${desc}`);
+        }
+        // Skip empty unassigned pins
+    });
+    return lines.join("\n");
+}
+
+function downloadCSV(){
+    const text = generateCSVText();
+    const blob = new Blob([text], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = document.getElementById("exportFilename").value || "pinmap.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("CSV downloaded!");
+}
+
+function copyCSV(){
+    navigator.clipboard.writeText(generateCSVText()).then(() => showToast("Copied to clipboard!"));
+}
+
+function openInViewer(){
+    // Save pin data to shared localStorage keys
+    const pinDataObj = {};
+    const cableTypes = {};
+    pinAssignments.forEach(pa => {
+        if(!pa.name && !pa.nc) return;
+        const entry = {name: pa.nc ? "NC" : pa.name};
+        if(!pa.nc){
+            if(pa.outerColor) entry.outer_color = pa.outerColor;
+            if(pa.innerColor) entry.inner_color = pa.innerColor;
+            if(pa.cableType) entry.cable_type = pa.cableType;
+            if(pa.description) entry.description = pa.description;
+        }
+        pinDataObj[pa.pin] = entry;
+        const m = pa.name.match(/^(C\d+)/);
+        if(m && pa.cableType) cableTypes[m[1]] = {type: pa.cableType};
+    });
+
+    // Use shared keys that viewer reads
+    localStorage.setItem("connector_pin_data", JSON.stringify(pinDataObj));
+    localStorage.setItem("connector_cable_types", JSON.stringify(cableTypes));
+    localStorage.removeItem("connector_done_pins");
+
+    // Save connector type
+    if(selectedConnector){
+        // Map to viewer's connector type IDs
+        const idMap = {
+            "D-Sub 9":"dsub9","D-Sub 15":"dsub15","D-Sub 25":"dsub25","D-Sub 37":"dsub37",
+            "D-Sub 50":"dsub50","D-Sub 62":"dsub62","D-Sub 78":"dsub78","D-Sub 104":"dsub104",
+            "Round 4-pin":"round4","Round 7-pin":"round7","Round 12-pin":"round12",
+            "Round 19-pin":"round19","Round 24-pin":"round24","Round 37-pin":"round37"
+        };
+        const ctId = idMap[selectedConnector.name];
+        if(ctId) localStorage.setItem("connector_type", JSON.stringify(ctId));
+    }
+
+    showToast("Data saved! Opening viewer...");
+    setTimeout(() => {
+        window.location.href = "universal_viewer.html";
+    }, 500);
+}
+
+// ===== IMPORT CSV =====
+function importCSV(){
+    document.getElementById("importFile").click();
+}
+
+function handleImport(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try{
+            parseImportCSV(ev.target.result);
+            showToast("CSV imported! Review in Pin Assignment tab.");
+            goToStep(3);
+        }catch(err){
+            showToast("Import error: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+}
+
+function parseImportCSV(text){
+    const lines = text.trim().split(/\r?\n/);
+    if(lines.length < 2) throw new Error("Need header + data rows");
+    const header = lines[0].split(",").map(h=>h.trim().toLowerCase());
+    const pinIdx = header.indexOf("pin");
+    const nameIdx = header.indexOf("name");
+    if(pinIdx===-1||nameIdx===-1) throw new Error("Missing pin/name columns");
+
+    const ocIdx = header.indexOf("outer_color");
+    const icIdx = header.indexOf("inner_color");
+    const colorIdx = header.indexOf("color");
+    const ctIdx = header.indexOf("cable_type");
+    const descIdx = header.indexOf("description");
+
+    // Find max pin to determine connector
+    let maxPin = 0;
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(",").map(c=>c.trim());
+        const pin = parseInt(cols[pinIdx]);
+        if(!isNaN(pin)) maxPin = Math.max(maxPin, pin);
+    }
+
+    // Auto-select connector
+    if(!selectedConnector){
+        const match = [...connectorPresets.dsub,...connectorPresets.round].find(p => p.pins >= maxPin);
+        if(match) selectedConnector = {...match};
+        else selectedConnector = {name:"Custom", pins:maxPin, rows:[maxPin], shape:"dsub", icon:"⚙"};
+    }
+
+    // Init pin assignments
+    pinAssignments = [];
+    for(let i=1;i<=selectedConnector.pins;i++){
+        pinAssignments.push({pin:i, name:"", outerColor:"", innerColor:"", cableType:"", description:"", nc:false});
+    }
+
+    // Parse rows
+    const cableSet = {};
+    for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(",").map(c=>c.trim());
+        const pin = parseInt(cols[pinIdx]);
+        if(isNaN(pin) || pin < 1 || pin > selectedConnector.pins) continue;
+        const pa = pinAssignments[pin-1];
+        const name = cols[nameIdx]||"";
+        const isNC = name.toUpperCase()==="NC"||name.toUpperCase()==="N/C";
+        pa.name = name;
+        pa.nc = isNC;
+        if(!isNC){
+            if(ocIdx!==-1) pa.outerColor = cols[ocIdx]||"";
+            if(icIdx!==-1) pa.innerColor = cols[icIdx]||"";
+            if(colorIdx!==-1 && !pa.outerColor){
+                const c = cols[colorIdx]||"";
+                if(c.includes("/")){
+                    const p = c.split("/");
+                    pa.outerColor = p[0]; pa.innerColor = p[1];
+                } else { pa.outerColor = c; pa.innerColor = c; }
+            }
+            if(ctIdx!==-1) pa.cableType = cols[ctIdx]||"";
+            if(descIdx!==-1) pa.description = cols[descIdx]||"";
+
+            // Auto-detect cables
+            const m = name.match(/^(C\d+)/);
+            if(m && pa.cableType && !cableSet[m[1]]){
+                cableSet[m[1]] = pa.cableType;
+            }
+        }
+    }
+
+    // Rebuild cables array from detected cables
+    for(const [name,type] of Object.entries(cableSet)){
+        if(!cables.find(c=>c.name===name)){
+            const map={"Coaxial":1,"2-core cable":2,"4-core cable":4,"7-core cable":7,"10-core cable":10,"20-core cable":20};
+            const cores = map[type]||2;
+            const colors = (colorSequences[type]||[]).slice(0,cores);
+            cables.push({name,type,cores,colors,hasShield:true});
+        }
+    }
+    cables.sort((a,b)=>{
+        const na=parseInt(a.name.replace(/\D/g,"")), nb=parseInt(b.name.replace(/\D/g,""));
+        return na-nb;
+    });
+    renderCableTable();
+}
+
+// ===== UTILITIES =====
+function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("visible");
+    setTimeout(()=>t.classList.remove("visible"), 2500);
+}
+
+// ===== INIT =====
+init();
+</script>
+</body>
+</html>
