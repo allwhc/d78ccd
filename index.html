@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>D-Sub 78 Pin Mapper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;700&display=swap');
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+body{
+    font-family:'Outfit',sans-serif;
+    background:#0a1628;
+    color:#e0e8f0;
+    text-align:center;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+    min-height:100vh;
+}
+
+h2{
+    font-weight:700;
+    font-size:1.5rem;
+    letter-spacing:0.5px;
+    margin-top:18px;
+    color:#c8daf0;
+}
+
+/* Toolbar rows */
+.toolbar{
+    margin:12px auto 4px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    max-width:1200px;
+}
+.toolbar-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    margin:4px auto;
+    max-width:1200px;
+}
+
+button{
+    padding:7px 14px;
+    font-family:'Outfit',sans-serif;
+    font-weight:600;
+    font-size:0.82rem;
+    cursor:pointer;
+    border:1px solid #2a4a6e;
+    background:#12253e;
+    color:#a0c4e8;
+    border-radius:6px;
+    transition:all 0.2s;
+    white-space:nowrap;
+}
+button:hover{ background:#1a3556; border-color:#3a7bd5; color:#fff; }
+button:disabled{ opacity:0.35; cursor:not-allowed; }
+
+.nav-btn{ padding:7px 11px; font-size:1rem; min-width:34px; }
+
+select{
+    padding:7px 12px;
+    font-family:'Outfit',sans-serif;
+    font-weight:600;
+    font-size:0.82rem;
+    border:1px solid #2a4a6e;
+    background:#12253e;
+    color:#a0c4e8;
+    border-radius:6px;
+    cursor:pointer;
+    min-width:280px;
+    transition:all 0.2s;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0c4e8' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    padding-right:30px;
+}
+select:hover{ border-color:#3a7bd5; color:#fff; }
+select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,123,213,0.3); }
+
+.filter-group{ display:flex; align-items:center; gap:4px; }
+.filter-label{
+    font-size:0.75rem; color:#6088a8; font-weight:600;
+    text-transform:uppercase; letter-spacing:1px; margin-right:2px;
+}
+
+/* Checkbox toggle */
+.checkbox-group{
+    display:flex; align-items:center; gap:5px; cursor:pointer; user-select:none;
+}
+.checkbox-group input[type="checkbox"]{
+    appearance:none; width:15px; height:15px;
+    border:2px solid #2a4a6e; border-radius:4px;
+    background:#12253e; cursor:pointer; position:relative; transition:all 0.2s; flex-shrink:0;
+}
+.checkbox-group input[type="checkbox"]:checked{
+    background:#1976d2; border-color:#3a7bd5;
+}
+.checkbox-group input[type="checkbox"]:checked::after{
+    content:'\2713'; position:absolute; top:-2px; left:1px;
+    font-size:11px; color:#fff; font-weight:bold;
+}
+.checkbox-group label{
+    font-size:0.8rem; font-weight:600; color:#a0c4e8; cursor:pointer; white-space:nowrap;
+}
+.checkbox-group.tracking-active label{ color:#2ecc71; }
+.checkbox-group.tracking-active input[type="checkbox"]:checked{
+    background:#1b8a3a; border-color:#2ecc71;
+}
+
+/* Badge */
+.badge{
+    display:inline-block; padding:4px 12px; margin-left:8px;
+    background:linear-gradient(135deg,#f0a030,#e08820);
+    color:#1a1a1a; font-weight:700; font-size:0.72rem;
+    border-radius:20px; letter-spacing:0.5px; text-transform:uppercase;
+}
+.badge-source{
+    background:linear-gradient(135deg,#3a7bd5,#2a5faa); color:#fff; font-size:0.68rem;
+}
+
+/* Connector */
+.connector{
+    position:relative; margin:16px auto 20px;
+    padding:50px 80px;
+    background:linear-gradient(145deg,#0f2640,#162d4a);
+    border-radius:70px; border:3px solid #1a4a78;
+    width:max-content; transition:transform 0.3s ease;
+    box-shadow:0 0 40px rgba(26,74,120,0.3),inset 0 0 60px rgba(0,0,0,0.2);
+}
+.connector.front-view{ transform:scaleX(-1); }
+.connector.front-view .inner{ transform:scaleX(-1); }
+.connector.front-view .pin-num-tooltip{ transform:translateX(-50%) scaleX(-1); }
+.connector.tracking-mode .pin{ cursor:crosshair; }
+.connector.edit-mode .pin{ cursor:cell; }
+
+.row{
+    display:flex; gap:20px; justify-content:center;
+    margin:14px 0; padding:6px 10px; border-radius:20px;
+}
+.row.zone-solid{ border:2px solid rgba(255,255,255,0.1); }
+.row.zone-outline{ border:2px dashed rgba(255,255,255,0.08); }
+.row.offset{ margin-left:40px; }
+
+.pin{
+    position:relative; width:52px; height:52px; cursor:pointer;
+    transition:opacity 0.3s ease,transform 0.3s ease,filter 0.3s ease;
+}
+.pin.dimmed{ opacity:0.12; filter:grayscale(1); pointer-events:none; transform:scale(0.92); }
+.pin.highlighted{ transform:scale(1.1); filter:drop-shadow(0 0 6px rgba(58,123,213,0.6)); }
+
+/* Done overlay - only in tracking mode */
+.connector.tracking-mode .pin.done .outer::after{
+    content:'\2713'; position:absolute; top:0;left:0;right:0;bottom:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; font-weight:900; color:rgba(0,255,100,0.55);
+    pointer-events:none; text-shadow:0 0 6px rgba(0,200,80,0.4); z-index:5;
+}
+.connector.tracking-mode .pin.done .outer{ box-shadow:0 0 8px rgba(0,200,80,0.3); }
+
+/* Shared pin indicator */
+.pin.shared-pin .outer{ border:2px dashed rgba(255,200,0,0.5); }
+
+/* NC (Not Connected) pin */
+.pin.nc-pin{
+    opacity:0.3;
+    cursor:default;
+}
+.pin.nc-pin .outer{
+    background:#1a202c !important;
+    border:2px dashed rgba(255,255,255,0.15);
+    box-shadow:none;
+}
+.pin.nc-pin .inner{
+    background:#1a202c !important;
+    color:#4a5568 !important;
+    font-size:9px;
+}
+
+.outer{
+    position:absolute; width:100%; height:100%; border-radius:50%;
+    border:1px solid rgba(0,0,0,0.4); box-shadow:0 2px 4px rgba(0,0,0,0.3);
+}
+.inner{
+    position:absolute; width:66%; height:66%; top:17%; left:17%;
+    border-radius:50%; border:1px solid rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700;
+    color:white; text-align:center; padding:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:clip;
+}
+
+/* Pin number tooltip */
+.pin-num-tooltip{
+    position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace; font-size:8px; color:#4a6a88;
+    opacity:0; transition:opacity 0.2s; white-space:nowrap; pointer-events:none;
+}
+.pin:hover .pin-num-tooltip{ opacity:1; }
+.connector.show-pin-nums .pin-num-tooltip{ opacity:1; color:#7aa0c0; }
+.connector.show-pin-nums .row{ margin:20px 0; }
+
+/* Stats */
+.stats-bar{
+    margin:0 auto 4px; font-size:0.78rem; color:#5a8ab0;
+    font-family:'JetBrains Mono',monospace;
+}
+.stats-bar span{ color:#8ac4f0; font-weight:700; }
+
+/* Progress */
+.progress-wrap{ margin:4px auto 8px; max-width:460px; display:none; }
+.progress-wrap.visible{ display:block; }
+.progress-bar-outer{
+    width:100%; height:18px; background:#12253e;
+    border:1px solid #2a4a6e; border-radius:9px; overflow:hidden;
+}
+.progress-bar-inner{
+    height:100%; background:linear-gradient(90deg,#1b8a3a,#2ecc71);
+    border-radius:9px; transition:width 0.4s ease;
+}
+.progress-text{
+    font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+    color:#6aaa80; margin-top:3px;
+}
+
+/* Cable legend */
+.cable-legend{
+    display:none; flex-wrap:wrap; justify-content:center; gap:5px 12px;
+    margin:0 auto 12px; max-width:800px; padding:8px 14px;
+    background:rgba(18,37,62,0.7); border:1px solid #1a3a5a; border-radius:10px;
+}
+.cable-legend.visible{ display:flex; }
+.legend-item{
+    font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:#6a9ac0;
+    display:flex; align-items:center; gap:4px;
+}
+.legend-item.is-done{ color:#2ecc71; text-decoration:line-through; text-decoration-color:#2a8a4a; }
+.legend-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+/* Notes panel */
+.notes-panel{
+    display:none; margin:0 auto 20px; max-width:900px;
+    text-align:left; padding:14px 20px;
+    background:rgba(18,37,62,0.7); border:1px solid #1a3a5a; border-radius:10px;
+}
+.notes-panel.visible{ display:block; }
+.notes-panel h3{
+    font-size:0.85rem; color:#f0a030; margin-bottom:8px;
+    font-weight:700; text-transform:uppercase; letter-spacing:1px;
+    text-align:center;
+}
+.note-item{
+    display:flex; align-items:flex-start; gap:8px;
+    padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+    font-family:'JetBrains Mono',monospace; font-size:0.75rem;
+}
+.note-item:last-child{ border-bottom:none; }
+.note-pin{
+    color:#8ac4f0; font-weight:700; white-space:nowrap; min-width:50px;
+}
+.note-name{
+    color:#f0a030; font-weight:700; white-space:nowrap; min-width:110px;
+}
+.note-desc{
+    color:#d0dce8; font-weight:700;
+}
+.note-desc .shared-cables{ color:#fdd835; }
+
+/* Danger buttons */
+.btn-danger{ border-color:#6e2a2a; color:#e8a0a0; background:#2e1218; }
+.btn-danger:hover{ background:#4a1a22; border-color:#d53a3a; color:#fff; }
+
+/* CSV upload area */
+.upload-area{
+    display:none; margin:10px auto; max-width:500px;
+    padding:30px 20px; border:2px dashed #2a4a6e; border-radius:12px;
+    background:rgba(18,37,62,0.5); cursor:pointer; transition:all 0.3s;
+}
+.upload-area.visible{ display:block; }
+.upload-area:hover,.upload-area.dragover{ border-color:#3a7bd5; background:rgba(26,55,90,0.6); }
+.upload-area p{ font-size:0.9rem; color:#6a8ab0; margin:4px 0; }
+.upload-area .upload-icon{ font-size:2rem; margin-bottom:6px; }
+.upload-area input[type="file"]{ display:none; }
+
+.sep{ width:1px; height:24px; background:#2a4a6e; margin:0 2px; }
+
+@media print{
+    body{ background:#f5f0e8; color:#1a1a1a; }
+    .connector{ background:#f5f0e8; border-color:#333; box-shadow:none; }
+    .toolbar,.toolbar-row,h2,.stats-bar,.cable-legend,.progress-wrap,.upload-area{ display:none; }
+    .pin.dimmed{ opacity:0.1; }
+    .connector.show-pin-nums .pin-num-tooltip{ color:#333; }
+    .row.zone-solid{ border:2px solid #333 !important; }
+    .row.zone-outline{ border:2px dashed #555 !important; }
+    .pin.done .outer::after{ display:none; }
+    .connector.tracking-mode .pin.done .outer::after{ display:flex; color:rgba(0,150,60,0.7); }
+    .pin.nc-pin{ opacity:0.2; }
+    .pin.nc-pin .outer{ background:#ddd !important; border-color:#999; }
+    .pin.nc-pin .inner{ background:#ddd !important; color:#999 !important; }
+    .notes-panel{ background:#f0ead8; border-color:#999; }
+    .notes-panel h3{ color:#8a6010; }
+    .note-pin{ color:#1a3a5a; }
+    .note-name{ color:#8a6010; }
+    .note-desc{ color:#1a1a1a; }
+    .note-desc .shared-cables{ color:#6a4a00; }
+}
+</style>
+</head>
+<body>
+
+<h2>D-Sub 78 Pin Mapper
+    <span id="viewBadge" class="badge">REAR VIEW</span>
+    <span id="sourceBadge" class="badge badge-source">DEMO DATA</span>
+</h2>
+
+<!-- Row 1: View + Cable nav -->
+<div class="toolbar">
+    <button onclick="window.print()">🖨 Print</button>
+    <button onclick="toggleView()">🔄 Front/Rear</button>
+    <div class="sep"></div>
+    <div class="filter-group">
+        <span class="filter-label">Cable:</span>
+        <button class="nav-btn" onclick="navCable(-1)">◀</button>
+        <select id="cableFilter" onchange="filterPins()"></select>
+        <button class="nav-btn" onclick="navCable(1)">▶</button>
+    </div>
+</div>
+
+<!-- Row 2: Toggles + CSV -->
+<div class="toolbar-row">
+    <div class="checkbox-group">
+        <input type="checkbox" id="showPinNums" onchange="togglePinNumbers()">
+        <label for="showPinNums">Pin Numbers</label>
+    </div>
+    <div class="checkbox-group" id="editGroup">
+        <input type="checkbox" id="editMode" onchange="toggleEditMode()">
+        <label for="editMode">Edit Mode</label>
+    </div>
+    <div class="checkbox-group" id="trackingGroup">
+        <input type="checkbox" id="trackingMode" onchange="toggleTrackingMode()">
+        <label for="trackingMode">Pin Tracking</label>
+    </div>
+    <div class="sep"></div>
+    <button onclick="downloadCSV()">📥 Download CSV</button>
+    <button onclick="showUpload()">📤 Upload CSV</button>
+    <div class="sep"></div>
+    <button class="btn-danger" onclick="resetCableDone()">⟲ Reset Cable</button>
+    <button class="btn-danger" onclick="resetAllDone()">⟲ Reset All</button>
+    <button class="btn-danger" onclick="resetToDefault()">🗑 Default Data</button>
+</div>
+
+<!-- Upload area -->
+<div class="upload-area" id="uploadArea" onclick="document.getElementById('csvFile').click()">
+    <div class="upload-icon">📄</div>
+    <p><b>Drop CSV here</b> or click to browse</p>
+    <p style="font-size:0.75rem;color:#4a6a88;">Supports: pin,name,color,cable_type OR pin,name,outer_color,inner_color,cable_type</p>
+    <input type="file" id="csvFile" accept=".csv,.txt" onchange="handleFileUpload(event)">
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText"></div>
+</div>
+<div class="cable-legend" id="cableLegend"></div>
+
+<div class="connector" id="connector"></div>
+
+<!-- Bottom navigation -->
+<div class="toolbar-row" style="margin-bottom:12px;">
+    <button class="nav-btn" onclick="navCable(-1)">◀ Prev</button>
+    <span id="bottomCableLabel" style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#6a9ac0;min-width:200px;display:inline-block;"></span>
+    <button class="nav-btn" onclick="navCable(1)">Next ▶</button>
+</div>
+
+<!-- Notes panel below connector -->
+<div class="notes-panel" id="notesPanel">
+    <h3>⚡ Shared / Special Pin Notes</h3>
+    <div id="notesContent"></div>
+</div>
+
+<script>
+// === DOM refs ===
+const connector = document.getElementById("connector");
+const viewBadge = document.getElementById("viewBadge");
+const sourceBadge = document.getElementById("sourceBadge");
+const cableFilter = document.getElementById("cableFilter");
+const statsBar = document.getElementById("statsBar");
+const cableLegend = document.getElementById("cableLegend");
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const uploadArea = document.getElementById("uploadArea");
+const trackingGroup = document.getElementById("trackingGroup");
+const editGroup = document.getElementById("editGroup");
+const notesPanel = document.getElementById("notesPanel");
+const notesContent = document.getElementById("notesContent");
+const bottomCableLabel = document.getElementById("bottomCableLabel");
+
+let isFront = false;
+let isTracking = false;
+let isEditing = false;
+
+// === STORAGE KEYS ===
+const KEY_PINDATA = "dsub78_pin_data";
+const KEY_CABLETYPES = "dsub78_cable_types";
+const KEY_DONE = "dsub78_done_pins";
+
+// === Named color map ===
+const namedColors = {
+    shield:"#4a5568", "dark grey":"#37474f", grey:"#a0aec0",
+    "light blue":"#4fc3f7", signal:"#00bcd4",
+    blue:"#1976d2", white:"#f7fafc", brown:"#795548",
+    green:"#388e3c", yellow:"#fdd835", "dark pink":"#ad1457", pink:"#e91e63",
+    red:"#e53935", black:"#1a202c", violet:"#9c27b0",
+    orange:"#ff9800", cyan:"#00bcd4"
+};
+
+function resolveColor(name){
+    if(!name) return "#e0e0e0";
+    if(name.startsWith("#")) return name;
+    const n = name.toLowerCase();
+    // Sort keys longest first so "dark grey" matches before "grey"
+    const keys = Object.keys(namedColors).sort((a,b) => b.length - a.length);
+    for(const k of keys){ if(n.includes(k)) return namedColors[k]; }
+    return "#e0e0e0";
+}
+
+function setTextColor(el, bg){
+    const c = bg.toLowerCase();
+    const lightColors = ["#f7fafc","#fdd835","#ffffff","#a0aec0","#4fc3f7"];
+    el.style.color = lightColors.includes(c) ? "#1a202c" : "#fff";
+}
+
+// === DEFAULT DEMO DATA ===
+const defaultPinData = {
+1:{name:"C25-S",color:"Shield"},2:{name:"C24-S",color:"Shield"},
+3:{name:"C22-S",color:"Shield"},4:{name:"C21-S",color:"Shield"},
+5:{name:"C20-S",color:"Shield"},6:{name:"C25-1",color:"White"},
+7:{name:"C25-2",color:"Brown"},8:{name:"C25-3",color:"Green"},
+9:{name:"C25-4",color:"Yellow"},10:{name:"C2-S",color:"Shield"},
+11:{name:"C25-5",color:"Grey"},12:{name:"C13-1",color:"Red"},
+13:{name:"C12-1",color:"Red"},14:{name:"C12-2",color:"Blue"},
+15:{name:"C1-S",color:"Shield"},16:{name:"C3-1",color:"Red"},
+17:{name:"C2-2",color:"Blue"},18:{name:"C2-1",color:"Red"},
+19:{name:"C1-2",color:"Blue"},20:{name:"C1-1",color:"Red"},
+21:{name:"C23-1",color:"Signal"},22:{name:"C22-1",color:"Signal"},
+23:{name:"C21-1",color:"Signal"},24:{name:"C20-1",color:"Signal"},
+25:{name:"C4-S",color:"Shield"},26:{name:"C25-6",color:"Pink"},
+27:{name:"C25-7",color:"Blue"},28:{name:"C25-8",color:"Red"},
+29:{name:"C25-9",color:"Black"},30:{name:"C6-S",color:"Shield"},
+31:{name:"C25-10",color:"Violet"},32:{name:"C13-2",color:"Blue"},
+33:{name:"C25-20",color:"Grey/Pink"},34:{name:"C5-S",color:"Shield"},
+35:{name:"C4-1",color:"Red"},36:{name:"C6-2",color:"Blue"},
+37:{name:"C6-1",color:"Red"},38:{name:"C5-2",color:"Blue"},
+39:{name:"C5-1",color:"Red"},
+41:{name:"C19-S",color:"Shield"},42:{name:"C18-S",color:"Shield"},
+43:{name:"C17-S",color:"Shield"},44:{name:"C16-S",color:"Shield"},
+45:{name:"C25-11",color:"Red/Blue"},46:{name:"C25-12",color:"White/Green"},
+47:{name:"C25-13",color:"Brown/Green"},48:{name:"C25-14",color:"White/Yellow"},
+49:{name:"C8-S",color:"Shield"},50:{name:"C25-15",color:"Yellow/Brown"},
+51:{name:"C14-2",color:"Blue"},52:{name:"C14-1",color:"Red"},
+54:{name:"C7-S",color:"Shield"},55:{name:"C3-2",color:"Blue"},
+56:{name:"C8-2",color:"Red"},57:{name:"C8-1",color:"Blue"},
+58:{name:"C7-2",color:"Red"},59:{name:"C7-1",color:"Blue"},
+60:{name:"C19-1",color:"Signal"},61:{name:"C18-1",color:"Signal"},
+62:{name:"C17-1",color:"Signal"},63:{name:"C16-1",color:"Signal"},
+64:{name:"C3-S",color:"Shield"},65:{name:"C25-16",color:"White/Grey"},
+66:{name:"C25-17",color:"Grey/Brown"},67:{name:"C25-18",color:"White/Pink"},
+68:{name:"C25-19",color:"Pink/Brown"},69:{name:"C11-S",color:"Shield"},
+70:{name:"C15-2",color:"Blue"},71:{name:"C15-1",color:"Red"},
+73:{name:"C9-S",color:"Shield"},74:{name:"C4-2",color:"Blue"},
+75:{name:"C11-1",color:"Red"},76:{name:"C10-1",color:"Blue"},
+77:{name:"C9-2",color:"Red"},78:{name:"C9-1",color:"Blue"}
+};
+
+const defaultCableTypes = {
+    "C1":{type:"2-core cable"},"C2":{type:"20-core cable"},
+    "C3":{type:"Coaxial"},"C4":{type:"Coaxial"},"C5":{type:"Coaxial"},
+    "C6":{type:"Coaxial"},"C7":{type:"Coaxial"},"C8":{type:"Coaxial"},
+    "C9":{type:"Coaxial"},"C10":{type:"Coaxial"},"C11":{type:"Coaxial"},
+    "C12":{type:"2-core cable"},"C13":{type:"2-core cable"},
+    "C14":{type:"2-core cable"},"C15":{type:"2-core cable"},
+    "C16":{type:"Coaxial"},"C17":{type:"Coaxial"},"C18":{type:"Coaxial"},
+    "C19":{type:"Coaxial"},"C20":{type:"Coaxial"},"C21":{type:"Coaxial"},
+    "C22":{type:"Coaxial"},"C23":{type:"Coaxial"},"C24":{type:"Coaxial"},
+    "C25":{type:"20-core cable"}
+};
+
+// === Active state ===
+let pinData = {};
+let cableTypesData = {};
+let doneState = {};
+let pinElements = {};
+let cableGroups = {};
+let sortedCables = [];
+let isCustomData = false;
+
+const rows = [20,19,20,19];
+
+// === localStorage ===
+function lsGet(key){
+    try{ const r=localStorage.getItem(key); return r?JSON.parse(r):null; }catch(e){return null;}
+}
+function lsSet(key,val){
+    try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){}
+}
+function lsRemove(key){
+    try{ localStorage.removeItem(key); }catch(e){}
+}
+
+// === Extract ALL cable groups from a name (supports C3+C4+C5-S) ===
+function getAllCableGroups(name){
+    if(!name) return [];
+    // Split by dash to get cable part: "C3+C4+C5-S" → "C3+C4+C5"
+    const parts = name.split("-")[0];
+    // Split by + to get individual cables
+    const cables = parts.split("+").map(s => s.trim()).filter(s => /^C\d+$/.test(s));
+    return cables;
+}
+
+// Get first cable group (for single-cable pins)
+function getCableGroup(name){
+    const groups = getAllCableGroups(name);
+    return groups.length > 0 ? groups[0] : null;
+}
+
+// Check if pin is shared across multiple cables
+function isSharedPin(name){
+    return getAllCableGroups(name).length > 1;
+}
+
+// Check if pin is NC (Not Connected)
+function isNC(data){
+    if(!data) return false;
+    const n = (data.name||"").trim().toUpperCase();
+    return n === "NC" || n === "N/C" || n === "NO CONNECT" || n === "NOT CONNECTED";
+}
+
+// Shorten long pin names for display inside circle
+function shortenName(name){
+    if(!name || name.length <= 7) return name;
+    // Combined cables: C11+C12-S → C11~12S, C1+C2+C3-S → C1~3S
+    const m = name.match(/^(C(\d+))\+(.+)-(.+)$/);
+    if(m){
+        const firstCable = m[1];
+        const firstNum = parseInt(m[2]);
+        const rest = m[3]; // e.g. "C12" or "C2+C3"
+        const suffix = m[4]; // e.g. "S"
+        // Get all cable numbers
+        const allParts = (firstCable + "+" + rest).split("+");
+        const nums = allParts.map(s => parseInt(s.replace("C",""))).sort((a,b)=>a-b);
+        const last = nums[nums.length - 1];
+        return `C${nums[0]}~${last}${suffix}`;
+    }
+    // Generic fallback: truncate
+    return name.substring(0, 6) + "…";
+}
+
+// Auto-generate description for shared pins
+function autoDescription(data){
+    if(data.description) return data.description;
+    const groups = getAllCableGroups(data.name);
+    if(groups.length > 1){
+        return `Shield shared between ${groups.join(", ")} cables`;
+    }
+    return "";
+}
+
+// === Init ===
+function initData(){
+    const savedPins = lsGet(KEY_PINDATA);
+    const savedTypes = lsGet(KEY_CABLETYPES);
+    doneState = lsGet(KEY_DONE) || {};
+
+    if(savedPins){
+        pinData = savedPins;
+        cableTypesData = savedTypes || {};
+        isCustomData = true;
+    } else {
+        pinData = JSON.parse(JSON.stringify(defaultPinData));
+        cableTypesData = JSON.parse(JSON.stringify(defaultCableTypes));
+        isCustomData = false;
+    }
+    updateSourceBadge();
+    buildCableGroups();
+    buildDropdown();
+    buildConnector();
+    updateProgress();
+    updateNotes("ALL");
+    bottomCableLabel.textContent = cableFilter.options[cableFilter.selectedIndex].textContent;
+}
+
+function updateSourceBadge(){
+    sourceBadge.textContent = isCustomData ? "CUSTOM DATA" : "DEMO DATA";
+    sourceBadge.style.background = isCustomData
+        ? "linear-gradient(135deg,#2ecc71,#1b8a3a)"
+        : "linear-gradient(135deg,#3a7bd5,#2a5faa)";
+}
+
+// === Cable groups — register shared pins under ALL their cables ===
+function buildCableGroups(){
+    cableGroups = {};
+    for(const [pin, data] of Object.entries(pinData)){
+        if(isNC(data)) continue;
+        const groups = getAllCableGroups(data.name);
+        groups.forEach(grp => {
+            if(!cableGroups[grp]) cableGroups[grp] = [];
+            const pNum = Number(pin);
+            if(!cableGroups[grp].includes(pNum)) cableGroups[grp].push(pNum);
+        });
+    }
+    sortedCables = Object.keys(cableGroups).sort((a,b)=>
+        parseInt(a.replace("C","")) - parseInt(b.replace("C",""))
+    );
+}
+
+function buildDropdown(){
+    cableFilter.innerHTML = "";
+
+    // All pins option
+    const allOpt = document.createElement("option");
+    allOpt.value = "ALL";
+    const ncCount = Object.keys(pinData).filter(k => isNC(pinData[k])).length;
+    const ncStr = ncCount > 0 ? `, ${ncCount} NC` : "";
+    allOpt.textContent = `All Pins (${Object.keys(pinData).length}${ncStr})`;
+    cableFilter.appendChild(allOpt);
+
+    // Group cables by type
+    const typeGroups = {};
+    sortedCables.forEach(cable => {
+        const info = cableTypesData[cable];
+        const t = info ? info.type : "Other";
+        if(!typeGroups[t]) typeGroups[t] = [];
+        typeGroups[t].push(cable);
+    });
+
+    // Build grouped dropdown
+    for(const [typeName, cables] of Object.entries(typeGroups)){
+        // Count total unique pins in this type
+        const typePinSet = new Set();
+        cables.forEach(c => (cableGroups[c]||[]).forEach(p => typePinSet.add(p)));
+
+        // Type group header (selectable — selects all cables of this type)
+        const groupHeader = document.createElement("option");
+        groupHeader.value = "TYPE:" + typeName;
+        groupHeader.textContent = `▸ ${typeName} (${cables.length} cables, ${typePinSet.size} pins)`;
+        groupHeader.style.fontWeight = "bold";
+        cableFilter.appendChild(groupHeader);
+
+        // Individual cables under this type
+        cables.forEach(cable => {
+            const count = (cableGroups[cable]||[]).length;
+            const opt = document.createElement("option");
+            opt.value = cable;
+            opt.textContent = `    ${cable} — ${typeName} (${count} pins)`;
+            cableFilter.appendChild(opt);
+        });
+    }
+}
+
+// === Build connector ===
+function buildConnector(){
+    connector.innerHTML = "";
+    pinElements = {};
+    let pinNumber = 1;
+
+    rows.forEach((count, idx) => {
+        const row = document.createElement("div");
+        row.className = "row " + (idx%2===0?"zone-solid":"zone-outline") + (idx%2?" offset":"");
+
+        for(let i=0; i<count; i++){
+            const pin = document.createElement("div");
+            pin.className = "pin";
+            const data = pinData[pinNumber];
+            pin.title = data ? `Pin ${pinNumber}: ${data.name}` : `Pin ${pinNumber}`;
+
+            const outer = document.createElement("div");
+            outer.className = "outer";
+            const inner = document.createElement("div");
+            inner.className = "inner";
+
+            applyPinColors(data, outer, inner);
+
+            const pinIsNC = isNC(data);
+
+            // Mark NC pins
+            if(pinIsNC){
+                pin.classList.add("nc-pin");
+                pin.title = `Pin ${pinNumber} (NC — Not Connected)`;
+            }
+
+            // Mark shared pins
+            if(!pinIsNC && data && isSharedPin(data.name)){
+                pin.classList.add("shared-pin");
+                pin.title = `Pin ${pinNumber}: ${data.name} (SHARED)`;
+            }
+
+            // Restore done (skip NC)
+            if(!pinIsNC && doneState[pinNumber]) pin.classList.add("done");
+
+            const numLabel = document.createElement("span");
+            numLabel.className = "pin-num-tooltip";
+            const fullName = data ? data.name : "";
+            const shortName = data ? shortenName(data.name) : "";
+            const nameExtra = (fullName && fullName !== shortName) ? ` (${fullName})` : "";
+            numLabel.textContent = "Pin " + pinNumber + nameExtra;
+
+            const currentPin = pinNumber;
+
+            if(!pinIsNC){
+                pin.addEventListener("click", () => {
+                    if(isTracking){
+                        doneState[currentPin] = !doneState[currentPin];
+                        lsSet(KEY_DONE, doneState);
+                        pin.classList.toggle("done", doneState[currentPin]);
+                        updateProgress();
+                        if(cableFilter.value !== "ALL") filterPins();
+                    } else if(isEditing){
+                        const t = prompt("Pin label:", inner.innerText);
+                        if(t !== null) inner.innerText = t;
+                        const oc = prompt("Outer color:", outer.style.background);
+                        if(oc) outer.style.background = oc;
+                        const ic = prompt("Inner color:", inner.style.background);
+                        if(ic){ inner.style.background = ic; setTextColor(inner, ic); }
+                    }
+                });
+            }
+
+            pin.appendChild(outer);
+            pin.appendChild(inner);
+            pin.appendChild(numLabel);
+            row.appendChild(pin);
+            pinElements[pinNumber] = pin;
+            pinNumber++;
+        }
+        connector.appendChild(row);
+    });
+}
+
+function applyPinColors(data, outer, inner){
+    if(!data){
+        outer.style.background = "#2d3748";
+        inner.style.background = "#1a202c";
+        inner.innerText = "";
+        return;
+    }
+    if(isNC(data)){
+        outer.style.background = "#1a202c";
+        inner.style.background = "#1a202c";
+        inner.innerText = "NC";
+        inner.style.color = "#4a5568";
+        return;
+    }
+    inner.innerText = shortenName(data.name);
+
+    if(data.outer_color && data.inner_color){
+        const c1 = resolveColor(data.outer_color);
+        const c2 = resolveColor(data.inner_color);
+        outer.style.background = c1;
+        inner.style.background = c2;
+        setTextColor(inner, c2);
+    } else if(data.color && data.color.includes("/")){
+        const p = data.color.split("/");
+        outer.style.background = resolveColor(p[0]);
+        inner.style.background = resolveColor(p[1]);
+        setTextColor(inner, resolveColor(p[1]));
+    } else {
+        const c = resolveColor(data.color || data.outer_color || "");
+        outer.style.background = c;
+        inner.style.background = c;
+        setTextColor(inner, c);
+    }
+}
+
+// === View toggles ===
+function toggleView(){
+    isFront = !isFront;
+    connector.classList.toggle("front-view", isFront);
+    viewBadge.innerText = isFront ? "FRONT VIEW" : "REAR VIEW";
+}
+
+function togglePinNumbers(){
+    connector.classList.toggle("show-pin-nums", document.getElementById("showPinNums").checked);
+}
+
+function toggleTrackingMode(){
+    isTracking = document.getElementById("trackingMode").checked;
+    connector.classList.toggle("tracking-mode", isTracking);
+    trackingGroup.classList.toggle("tracking-active", isTracking);
+    progressWrap.classList.toggle("visible", isTracking);
+    // Turn off edit mode if tracking on
+    if(isTracking && isEditing){
+        isEditing = false;
+        document.getElementById("editMode").checked = false;
+        editGroup.classList.remove("tracking-active");
+        connector.classList.remove("edit-mode");
+    }
+    if(isTracking) updateProgress();
+    filterPins();
+}
+
+function toggleEditMode(){
+    isEditing = document.getElementById("editMode").checked;
+    connector.classList.toggle("edit-mode", isEditing);
+    editGroup.classList.toggle("tracking-active", isEditing);
+    // Turn off tracking if edit on
+    if(isEditing && isTracking){
+        isTracking = false;
+        document.getElementById("trackingMode").checked = false;
+        trackingGroup.classList.remove("tracking-active");
+        connector.classList.remove("tracking-mode");
+        progressWrap.classList.remove("visible");
+        filterPins();
+    }
+}
+
+// === Cable navigation ===
+function navCable(dir){
+    const opts = cableFilter.options;
+    let idx = cableFilter.selectedIndex + dir;
+    while(idx >= 0 && idx < opts.length && opts[idx].disabled) idx += dir;
+    if(idx >= 0 && idx < opts.length){
+        cableFilter.selectedIndex = idx;
+        filterPins();
+    }
+}
+
+// === Filter ===
+function filterPins(){
+    const val = cableFilter.value;
+    // Sync bottom label
+    bottomCableLabel.textContent = cableFilter.options[cableFilter.selectedIndex].textContent;
+    let activePins = null;
+
+    if(val === "ALL"){
+        activePins = null;
+    } else if(val.startsWith("TYPE:")){
+        const typeName = val.replace("TYPE:","");
+        activePins = new Set();
+        sortedCables.forEach(cable => {
+            const info = cableTypesData[cable];
+            const t = info ? info.type : "Other";
+            if(t === typeName) (cableGroups[cable]||[]).forEach(p => activePins.add(p));
+        });
+    } else {
+        activePins = new Set(cableGroups[val] || []);
+    }
+
+    let shown = 0;
+    for(const [pin, el] of Object.entries(pinElements)){
+        const pNum = Number(pin);
+        const data = pinData[pNum];
+        if(isNC(data)){
+            el.classList.remove("highlighted");
+            continue;
+        }
+        if(activePins === null){
+            el.classList.remove("dimmed","highlighted"); shown++;
+        } else if(activePins.has(pNum)){
+            el.classList.remove("dimmed"); el.classList.add("highlighted"); shown++;
+        } else {
+            el.classList.add("dimmed"); el.classList.remove("highlighted");
+        }
+    }
+
+    if(activePins === null){
+        statsBar.innerHTML = "";
+    } else {
+        const list = [...activePins].sort((a,b)=>a-b).join(", ");
+        const doneN = [...activePins].filter(p => doneState[p]).length;
+        const doneStr = isTracking ? ` — <span style="color:#2ecc71">${doneN}/${shown} done</span>` : "";
+        statsBar.innerHTML = `Showing <span>${shown}</span> pins: ${list}${doneStr}`;
+    }
+
+    if(val !== "ALL" && !val.startsWith("TYPE:")){
+        buildLegend([val]);
+    } else if(val.startsWith("TYPE:")){
+        const typeName = val.replace("TYPE:","");
+        buildLegend(sortedCables.filter(c => {
+            const info = cableTypesData[c];
+            return (info ? info.type : "Other") === typeName;
+        }));
+    } else {
+        cableLegend.classList.remove("visible");
+    }
+
+    updateNotes(val);
+}
+
+function buildLegend(cables){
+    cableLegend.innerHTML = "";
+    const seen = new Set();
+    cables.forEach(cable => {
+        const pins = (cableGroups[cable]||[]).slice().sort((a,b)=>a-b);
+        pins.forEach(p => {
+            if(seen.has(p)) return;
+            seen.add(p);
+            const d = pinData[p];
+            if(!d) return;
+            const c = resolveColor(d.color || d.outer_color || "");
+            const shared = isSharedPin(d.name) ? " ⚡" : "";
+            const item = document.createElement("span");
+            item.className = "legend-item" + (isTracking && doneState[p] ? " is-done" : "");
+            item.innerHTML = `<span class="legend-dot" style="background:${c}"></span>Pin ${p}: ${d.name}${shared}${isTracking && doneState[p]?" ✓":""}`;
+            cableLegend.appendChild(item);
+        });
+    });
+    cableLegend.classList.add("visible");
+}
+
+// === Notes panel ===
+function updateNotes(filterVal){
+    notesContent.innerHTML = "";
+    let relevantPins = [];
+
+    if(filterVal === "ALL"){
+        // Show all pins that have descriptions or are shared
+        relevantPins = Object.keys(pinData).map(Number).sort((a,b)=>a-b);
+    } else if(filterVal.startsWith("TYPE:")){
+        const typeName = filterVal.replace("TYPE:","");
+        const pinSet = new Set();
+        sortedCables.forEach(cable => {
+            const info = cableTypesData[cable];
+            if((info ? info.type : "Other") === typeName)
+                (cableGroups[cable]||[]).forEach(p => pinSet.add(p));
+        });
+        relevantPins = [...pinSet].sort((a,b)=>a-b);
+    } else {
+        relevantPins = (cableGroups[filterVal]||[]).slice().sort((a,b)=>a-b);
+    }
+
+    let hasNotes = false;
+
+    relevantPins.forEach(p => {
+        const d = pinData[p];
+        if(!d) return;
+        const desc = autoDescription(d);
+        if(!desc) return;
+
+        hasNotes = true;
+        const item = document.createElement("div");
+        item.className = "note-item";
+
+        const groups = getAllCableGroups(d.name);
+        const sharedList = groups.length > 1
+            ? `<span class="shared-cables">${groups.join(", ")}</span>`
+            : "";
+
+        item.innerHTML = `
+            <span class="note-pin">Pin ${p}</span>
+            <span class="note-name">${d.name}</span>
+            <span class="note-desc">${desc}${sharedList ? " → " + sharedList : ""}</span>
+        `;
+        notesContent.appendChild(item);
+    });
+
+    notesPanel.classList.toggle("visible", hasNotes);
+}
+
+// === Progress ===
+function updateProgress(){
+    const activePins = Object.keys(pinData).filter(k => !isNC(pinData[k]));
+    const total = activePins.length;
+    const done = activePins.filter(k => doneState[k]).length;
+    const ncCount = Object.keys(pinData).length - total;
+    const pct = total > 0 ? Math.round((done/total)*100) : 0;
+    progressBar.style.width = pct + "%";
+    const ncStr = ncCount > 0 ? ` (${ncCount} NC)` : "";
+    progressText.textContent = `${done} / ${total} connections done (${pct}%)${ncStr}`;
+    progressBar.style.background = pct===100
+        ? "linear-gradient(90deg,#2ecc71,#27ae60)"
+        : "linear-gradient(90deg,#1b8a3a,#2ecc71)";
+    progressText.style.color = pct===100 ? "#2ecc71" : "#6aaa80";
+}
+
+// === Reset functions ===
+function resetCableDone(){
+    const val = cableFilter.value;
+    if(val === "ALL"){ alert("Select a specific cable first, or use 'Reset All'."); return; }
+    let pins = [];
+    if(val.startsWith("TYPE:")){
+        const typeName = val.replace("TYPE:","");
+        sortedCables.forEach(c => {
+            const info = cableTypesData[c];
+            if((info?info.type:"Other") === typeName) pins.push(...(cableGroups[c]||[]));
+        });
+    } else {
+        pins = cableGroups[val] || [];
+    }
+    const label = val.startsWith("TYPE:") ? val.replace("TYPE:","") : val;
+    if(!confirm(`Reset done for ${label} (${pins.length} pins)?`)) return;
+    pins.forEach(p => {
+        doneState[p] = false;
+        const el = pinElements[p];
+        if(el) el.classList.remove("done");
+    });
+    lsSet(KEY_DONE, doneState);
+    updateProgress();
+    filterPins();
+}
+
+function resetAllDone(){
+    if(!confirm("Reset ALL done checkboxes?")) return;
+    doneState = {};
+    lsSet(KEY_DONE, doneState);
+    for(const [pin, el] of Object.entries(pinElements)) el.classList.remove("done");
+    updateProgress();
+    filterPins();
+}
+
+function resetToDefault(){
+    if(!confirm("Clear uploaded data and reset to demo? Done tracking will also reset.")) return;
+    lsRemove(KEY_PINDATA);
+    lsRemove(KEY_CABLETYPES);
+    lsRemove(KEY_DONE);
+    doneState = {};
+    initData();
+}
+
+// === CSV DOWNLOAD (includes description) ===
+function downloadCSV(){
+    const lines = ["pin,name,outer_color,inner_color,cable_type,description"];
+    const sortedPins = Object.keys(pinData).map(Number).sort((a,b)=>a-b);
+
+    sortedPins.forEach(p => {
+        const d = pinData[p];
+        if(!d) return;
+        if(isNC(d)){
+            lines.push(`${p},NC,,,,`);
+            return;
+        }
+        let oc, ic;
+        if(d.outer_color && d.inner_color){
+            oc = d.outer_color; ic = d.inner_color;
+        } else if(d.color && d.color.includes("/")){
+            const parts = d.color.split("/");
+            oc = parts[0]; ic = parts[1];
+        } else {
+            oc = d.color || ""; ic = d.color || "";
+        }
+        const groups = getAllCableGroups(d.name);
+        const ctype = (cableTypesData[groups[0]]||{}).type || d.cable_type || "";
+        const desc = (d.description || "").replace(/,/g, ";");
+        lines.push(`${p},${d.name},${oc},${ic},${ctype},${desc}`);
+    });
+
+    const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dsub78_pinmap.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// === CSV UPLOAD ===
+function showUpload(){
+    uploadArea.classList.toggle("visible");
+}
+
+uploadArea.addEventListener("dragover", (e) => {
+    e.preventDefault(); uploadArea.classList.add("dragover");
+});
+uploadArea.addEventListener("dragleave", () => {
+    uploadArea.classList.remove("dragover");
+});
+uploadArea.addEventListener("drop", (e) => {
+    e.preventDefault(); uploadArea.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if(file) parseCSVFile(file);
+});
+
+function handleFileUpload(e){
+    const file = e.target.files[0];
+    if(file) parseCSVFile(file);
+    e.target.value = "";
+}
+
+function parseCSVFile(file){
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const result = parseCSV(e.target.result);
+            if(result.error){ alert("CSV Error: " + result.error); return; }
+
+            doneState = {};
+            lsSet(KEY_DONE, doneState);
+
+            pinData = result.pinData;
+            cableTypesData = result.cableTypes;
+            isCustomData = true;
+
+            lsSet(KEY_PINDATA, pinData);
+            lsSet(KEY_CABLETYPES, cableTypesData);
+
+            updateSourceBadge();
+            buildCableGroups();
+            buildDropdown();
+            buildConnector();
+            updateProgress();
+            filterPins();
+            updateNotes("ALL");
+
+            uploadArea.classList.remove("visible");
+            alert(`Loaded ${Object.keys(pinData).length} pins successfully!`);
+        } catch(err){
+            alert("Failed to parse CSV: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseCSV(text){
+    const lines = text.trim().split(/\r?\n/);
+    if(lines.length < 2) return {error:"CSV must have a header row and at least one data row."};
+
+    const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+    const pinIdx = header.indexOf("pin");
+    const nameIdx = header.indexOf("name");
+
+    if(pinIdx === -1) return {error:"Missing 'pin' column."};
+    if(nameIdx === -1) return {error:"Missing 'name' column."};
+
+    const outerColorIdx = header.indexOf("outer_color");
+    const innerColorIdx = header.indexOf("inner_color");
+    const colorIdx = header.indexOf("color");
+    const cableTypeIdx = header.indexOf("cable_type");
+    const descIdx = header.indexOf("description");
+
+    const hasTwoColors = outerColorIdx !== -1 && innerColorIdx !== -1;
+    const hasSingleColor = colorIdx !== -1;
+
+    if(!hasTwoColors && !hasSingleColor) return {error:"Missing color columns. Need 'color' OR 'outer_color'+'inner_color'."};
+
+    const newPinData = {};
+    const newCableTypes = {};
+
+    for(let i=1; i<lines.length; i++){
+        const line = lines[i].trim();
+        if(!line) continue;
+        const cols = line.split(",").map(c => c.trim());
+
+        const pin = parseInt(cols[pinIdx]);
+        if(isNaN(pin) || pin < 1 || pin > 78) continue;
+
+        const name = cols[nameIdx] || "";
+        const entry = { name };
+        const nameUpper = name.trim().toUpperCase();
+        const pinIsNC = nameUpper === "NC" || nameUpper === "N/C" || nameUpper === "NO CONNECT" || nameUpper === "NOT CONNECTED";
+
+        if(pinIsNC){
+            // NC pin — no colors needed
+            entry.color = "";
+        } else if(hasTwoColors){
+            entry.outer_color = cols[outerColorIdx] || "";
+            entry.inner_color = cols[innerColorIdx] || "";
+        } else {
+            entry.color = cols[colorIdx] || "";
+        }
+
+        if(cableTypeIdx !== -1 && cols[cableTypeIdx]){
+            entry.cable_type = cols[cableTypeIdx];
+        }
+
+        if(descIdx !== -1 && cols[descIdx]){
+            entry.description = cols[descIdx];
+        }
+
+        newPinData[pin] = entry;
+
+        // Build cable types — auto-derive from name
+        const cables = getAllCableGroups(name);
+        cables.forEach(cable => {
+            if(cable && cableTypeIdx !== -1 && cols[cableTypeIdx]){
+                newCableTypes[cable] = { type: cols[cableTypeIdx] };
+            }
+        });
+    }
+
+    if(Object.keys(newPinData).length === 0) return {error:"No valid pin data found."};
+    return { pinData: newPinData, cableTypes: newCableTypes };
+}
+
+// === INIT ===
+initData();
+</script>
+</body>
+</html>
