@@ -874,6 +874,13 @@ function toggleEditMode(){
     }
 }
 
+// === Keyboard: Left/Right arrow keys navigate cables ===
+document.addEventListener("keydown", function(e){
+    if(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+    if(e.key === "ArrowLeft"){ e.preventDefault(); navCable(-1); }
+    if(e.key === "ArrowRight"){ e.preventDefault(); navCable(1); }
+});
+
 // === Cable navigation ===
 function navCable(dir){
     const opts = cableFilter.options;
