@@ -64,6 +64,9 @@ button:hover{ background:#1a3556; border-color:#3a7bd5; color:#fff; }
 button:disabled{ opacity:0.35; cursor:not-allowed; }
 
 .nav-btn{ padding:7px 11px; font-size:1rem; min-width:34px; }
+.row-btn{ padding:5px 10px; font-size:0.78rem; min-width:30px; font-weight:700; }
+.row-btn.active{ background:#1a3a6a !important; border-color:#3a7bd5 !important; color:#fff !important; }
+.row.row-dimmed{ opacity:0.15; pointer-events:none; }
 
 select{
     padding:7px 12px;
@@ -301,7 +304,7 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
 @media print{
     body{ background:#f5f0e8; color:#1a1a1a; }
     .connector{ background:#f5f0e8; border-color:#333; box-shadow:none; }
-    .toolbar,.toolbar-row,h2,.stats-bar,.cable-legend,.progress-wrap,.upload-area{ display:none; }
+    .toolbar,.toolbar-row,h2,.stats-bar,.cable-legend,.progress-wrap,.upload-area,#activeCableLabel{ display:none; }
     .pin.dimmed{ opacity:0.1; }
     .connector.show-pin-nums .pin-num-tooltip{ color:#333; }
     .row.zone-solid{ border:2px solid #333 !important; }
@@ -346,6 +349,15 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
         <button class="nav-btn" onclick="navCable(-1)">◀</button>
         <select id="cableFilter" onchange="filterPins()"></select>
         <button class="nav-btn" onclick="navCable(1)">▶</button>
+    </div>
+    <div class="sep"></div>
+    <div class="filter-group">
+        <span class="filter-label">Row:</span>
+        <button class="row-btn" id="rowBtnAll" onclick="setRowFilter('ALL')" style="background:#1a3a6a;border-color:#3a7bd5;color:#fff;">All</button>
+        <button class="row-btn" id="rowBtnA" onclick="setRowFilter('A')">A <span style="font-size:0.65rem;opacity:0.7;">(1-20)</span></button>
+        <button class="row-btn" id="rowBtnB" onclick="setRowFilter('B')">B <span style="font-size:0.65rem;opacity:0.7;">(21-39)</span></button>
+        <button class="row-btn" id="rowBtnC" onclick="setRowFilter('C')">C <span style="font-size:0.65rem;opacity:0.7;">(40-59)</span></button>
+        <button class="row-btn" id="rowBtnD" onclick="setRowFilter('D')">D <span style="font-size:0.65rem;opacity:0.7;">(60-78)</span></button>
     </div>
 </div>
 
@@ -524,8 +536,10 @@ let pinElements = {};
 let cableGroups = {};
 let sortedCables = [];
 let isCustomData = false;
+let activeRowFilter = "ALL";
 
 const rows = [20,19,20,19];
+const rowRanges = {A:[1,20], B:[21,39], C:[40,59], D:[60,78]};
 
 // === localStorage ===
 function lsGet(key){
@@ -878,12 +892,41 @@ function toggleEditMode(){
     }
 }
 
-// === Keyboard: Left/Right arrow keys navigate cables ===
+// === Keyboard: Left/Right = cables, Up/Down = rows ===
 document.addEventListener("keydown", function(e){
     if(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
     if(e.key === "ArrowLeft"){ e.preventDefault(); navCable(-1); }
     if(e.key === "ArrowRight"){ e.preventDefault(); navCable(1); }
+    if(e.key === "ArrowUp"){ e.preventDefault(); navRow(-1); }
+    if(e.key === "ArrowDown"){ e.preventDefault(); navRow(1); }
 });
+
+// === Row filter ===
+const rowOrder = ["ALL","A","B","C","D"];
+function setRowFilter(row){
+    activeRowFilter = row;
+    // Update button styles
+    document.querySelectorAll(".row-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("rowBtn" + (row === "ALL" ? "All" : row)).classList.add("active");
+    applyRowFilter();
+    filterPins();
+}
+function navRow(dir){
+    const idx = rowOrder.indexOf(activeRowFilter);
+    const next = idx + dir;
+    if(next >= 0 && next < rowOrder.length) setRowFilter(rowOrder[next]);
+}
+function applyRowFilter(){
+    const rowEls = connector.querySelectorAll(".row");
+    const rowLabels = ["A","B","C","D"];
+    rowEls.forEach((el, i) => {
+        if(activeRowFilter === "ALL" || rowLabels[i] === activeRowFilter){
+            el.classList.remove("row-dimmed");
+        } else {
+            el.classList.add("row-dimmed");
+        }
+    });
+}
 
 // === Cable navigation ===
 function navCable(dir){
@@ -894,6 +937,13 @@ function navCable(dir){
         cableFilter.selectedIndex = idx;
         filterPins();
     }
+}
+
+// === Pin in row check ===
+function pinInActiveRow(pNum){
+    if(activeRowFilter === "ALL") return true;
+    const range = rowRanges[activeRowFilter];
+    return pNum >= range[0] && pNum <= range[1];
 }
 
 // === Filter ===
@@ -917,6 +967,8 @@ function filterPins(){
         activePins = new Set(cableGroups[val] || []);
     }
 
+    applyRowFilter();
+
     let shown = 0;
     for(const [pin, el] of Object.entries(pinElements)){
         const pNum = Number(pin);
@@ -925,10 +977,11 @@ function filterPins(){
             el.classList.remove("highlighted");
             continue;
         }
+        const inRow = pinInActiveRow(pNum);
         if(activePins === null){
-            el.classList.remove("dimmed","highlighted"); shown++;
+            el.classList.remove("dimmed","highlighted"); if(inRow) shown++;
         } else if(activePins.has(pNum)){
-            el.classList.remove("dimmed"); el.classList.add("highlighted"); shown++;
+            el.classList.remove("dimmed"); el.classList.add("highlighted"); if(inRow) shown++;
         } else {
             el.classList.add("dimmed"); el.classList.remove("highlighted");
         }
@@ -938,16 +991,21 @@ function filterPins(){
     const cableLabel = document.getElementById("activeCableLabel");
     const cableName = document.getElementById("activeCableName");
     const cablePins = document.getElementById("activeCablePins");
-    if(activePins === null){
+    const rowSuffix = activeRowFilter !== "ALL" ? ` · Row ${activeRowFilter}` : "";
+    if(activePins === null && activeRowFilter === "ALL"){
         statsBar.innerHTML = "";
         cableLabel.style.display = "none";
     } else {
-        const list = [...activePins].sort((a,b)=>a-b).join(", ");
-        const doneN = [...activePins].filter(p => doneState[p]).length;
+        const filteredPins = activePins
+            ? [...activePins].filter(p => pinInActiveRow(p)).sort((a,b)=>a-b)
+            : Object.keys(pinData).map(Number).filter(p => !isNC(pinData[p]) && pinInActiveRow(p)).sort((a,b)=>a-b);
+        const list = filteredPins.join(", ");
+        const doneN = filteredPins.filter(p => doneState[p]).length;
         const doneStr = isTracking ? ` — <span style="color:#2ecc71">${doneN}/${shown} done</span>` : "";
-        statsBar.innerHTML = `Showing <span>${shown}</span> pins: ${list}${doneStr}`;
+        statsBar.innerHTML = `Showing <span>${shown}</span> pins${rowSuffix}: ${list}${doneStr}`;
         cableLabel.style.display = "block";
-        cableName.textContent = cableFilter.options[cableFilter.selectedIndex].textContent;
+        const labelText = activePins ? cableFilter.options[cableFilter.selectedIndex].textContent : "All Cables";
+        cableName.textContent = labelText + rowSuffix;
         cablePins.innerHTML = `${shown} pin${shown !== 1 ? "s" : ""}: ${list}`;
     }
 
