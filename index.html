@@ -389,6 +389,10 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
 </div>
 <div class="cable-legend" id="cableLegend"></div>
 
+<div id="activeCableLabel" style="display:none;margin:10px auto 4px;text-align:center;">
+    <span id="activeCableName" style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:2.5rem;color:#3a7bd5;letter-spacing:2px;text-shadow:0 0 20px rgba(58,123,213,0.4);"></span>
+    <span id="activeCablePins" style="display:block;font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;color:#6a8ab0;margin-top:2px;"></span>
+</div>
 <div class="connector" id="connector"></div>
 
 <!-- Bottom navigation -->
@@ -930,13 +934,21 @@ function filterPins(){
         }
     }
 
+    // Update big cable label above connector
+    const cableLabel = document.getElementById("activeCableLabel");
+    const cableName = document.getElementById("activeCableName");
+    const cablePins = document.getElementById("activeCablePins");
     if(activePins === null){
         statsBar.innerHTML = "";
+        cableLabel.style.display = "none";
     } else {
         const list = [...activePins].sort((a,b)=>a-b).join(", ");
         const doneN = [...activePins].filter(p => doneState[p]).length;
         const doneStr = isTracking ? ` — <span style="color:#2ecc71">${doneN}/${shown} done</span>` : "";
         statsBar.innerHTML = `Showing <span>${shown}</span> pins: ${list}${doneStr}`;
+        cableLabel.style.display = "block";
+        cableName.textContent = cableFilter.options[cableFilter.selectedIndex].textContent;
+        cablePins.innerHTML = `${shown} pin${shown !== 1 ? "s" : ""}: ${list}`;
     }
 
     if(val !== "ALL" && !val.startsWith("TYPE:")){
