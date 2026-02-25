@@ -396,6 +396,10 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
         <input type="checkbox" id="guideMode" onchange="toggleGuideMode()">
         <label for="guideMode">Guide Mode</label>
     </div>
+    <select id="guideStrategy" onchange="changeGuideStrategy()" style="display:none;min-width:140px;font-size:0.75rem;">
+        <option value="row-sweep">Row Sweep (inside-out)</option>
+        <option value="column-sweep" selected>Column Sweep (spiral)</option>
+    </select>
     <div class="sep"></div>
     <button onclick="downloadCSV()">📥 Download CSV</button>
     <button onclick="showUpload()">📤 Upload CSV</button>
@@ -909,10 +913,10 @@ function toggleTrackingMode(){
 // === Guide Mode ===
 let isGuiding = false;
 let guideOrder = [];
+let guideStrategy = "column-sweep";
 
-// Build optimal soldering order: inner rows first, center-out within each row
-function buildGuideOrder(){
-    // Row order: C (innermost) → B → D → A (outermost)
+// Row Sweep: complete each row inside-out, center-outward within each row
+function buildGuideOrder_RowSweep(){
     const rowPriority = [
         {label:"C", start:40, count:20},
         {label:"B", start:21, count:19},
@@ -921,7 +925,6 @@ function buildGuideOrder(){
     ];
     guideOrder = [];
     rowPriority.forEach(r => {
-        // Generate center-outward order for this row
         const pins = [];
         for(let i=0; i<r.count; i++) pins.push(r.start + i);
         const mid = Math.floor(pins.length / 2);
@@ -930,11 +933,74 @@ function buildGuideOrder(){
             if(mid + offset < pins.length) ordered.push(pins[mid + offset]);
             if(offset > 0 && mid - offset >= 0) ordered.push(pins[mid - offset]);
         }
-        // Only include pins that have data and are not NC
         ordered.forEach(p => {
             if(pinData[p] && !isNC(pinData[p])) guideOrder.push(p);
         });
     });
+}
+
+// Column Sweep: center column first, at each column do C→B→D→A, then expand outward
+function buildGuideOrder_ColumnSweep(){
+    // Row definitions: [start pin, count, physical offset]
+    // Rows A(20) and C(20) are aligned, B(19) and D(19) are offset by 0.5
+    const rowDefs = [
+        {id:"C", start:40, count:20, offset:0},
+        {id:"B", start:21, count:19, offset:0.5},
+        {id:"D", start:60, count:19, offset:0.5},
+        {id:"A", start:1,  count:20, offset:0}
+    ];
+    // Max columns = 20 (rows A and C have 20 pins)
+    const maxCols = 20;
+    // Build center-outward column order
+    const midCol = Math.floor(maxCols / 2); // column 10 (0-indexed)
+    const colOrder = [];
+    for(let offset=0; offset<=midCol; offset++){
+        if(midCol + offset < maxCols) colOrder.push(midCol + offset);
+        if(offset > 0 && midCol - offset >= 0) colOrder.push(midCol - offset);
+    }
+
+    guideOrder = [];
+    colOrder.forEach(col => {
+        // For each column, get the pin from each row (inside-out: C→B→D→A)
+        rowDefs.forEach(r => {
+            // For 19-pin offset rows, column indices 0-18 map to positions 0.5-18.5
+            // Closest column match: for offset rows, col maps to pin index col or col-1
+            let pinIdx;
+            if(r.offset === 0){
+                pinIdx = col;
+            } else {
+                // Offset row: pick the pin closest to this column position
+                // Column col in 20-pin row aligns with col-0.5 in 19-pin row → pin index col-1 or col
+                // Use col if col < count, but avoid duplicates
+                pinIdx = col > 0 ? col - 1 : 0;
+                if(pinIdx >= r.count) pinIdx = r.count - 1;
+            }
+            const pinNum = r.start + pinIdx;
+            if(pinData[pinNum] && !isNC(pinData[pinNum]) && !guideOrder.includes(pinNum)){
+                guideOrder.push(pinNum);
+            }
+        });
+    });
+    // Add any remaining pins not yet included
+    for(const r of rowDefs){
+        for(let i=0; i<r.count; i++){
+            const p = r.start + i;
+            if(pinData[p] && !isNC(pinData[p]) && !guideOrder.includes(p)){
+                guideOrder.push(p);
+            }
+        }
+    }
+}
+
+function buildGuideOrder(){
+    if(guideStrategy === "column-sweep") buildGuideOrder_ColumnSweep();
+    else buildGuideOrder_RowSweep();
+}
+
+function changeGuideStrategy(){
+    guideStrategy = document.getElementById("guideStrategy").value;
+    buildGuideOrder();
+    updateGuide();
 }
 
 function getNextGuidePin(){
@@ -1004,6 +1070,7 @@ function updateGuide(){
 function toggleGuideMode(){
     isGuiding = document.getElementById("guideMode").checked;
     document.getElementById("guideGroup").classList.toggle("guide-active", isGuiding);
+    document.getElementById("guideStrategy").style.display = isGuiding ? "" : "none";
     if(isGuiding) buildGuideOrder();
     updateGuide();
 }
@@ -1341,6 +1408,7 @@ function saveProgress(){
         doneState: doneState,
         cableFilter: cableFilter.value,
         rowFilter: activeRowFilter,
+        guideStrategy: guideStrategy,
         pinData: pinData,
         cableTypesData: cableTypesData
     };
@@ -1410,6 +1478,13 @@ function handleLoadProgress(event){
 
             // Restore row filter
             if(snapshot.rowFilter) setRowFilter(snapshot.rowFilter);
+
+            // Restore guide strategy
+            if(snapshot.guideStrategy){
+                guideStrategy = snapshot.guideStrategy;
+                document.getElementById("guideStrategy").value = guideStrategy;
+                buildGuideOrder();
+            }
 
             buildConnector();
             updateProgress();
