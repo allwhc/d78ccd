@@ -400,6 +400,10 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
     <button onclick="downloadCSV()">📥 Download CSV</button>
     <button onclick="showUpload()">📤 Upload CSV</button>
     <div class="sep"></div>
+    <button onclick="saveProgress()" style="background:#1b5a3a;border-color:#2ecc71;color:#2ecc71;">💾 Save Progress</button>
+    <button onclick="document.getElementById('progressFile').click()" style="background:#1b4a5a;border-color:#3498db;color:#3498db;">📂 Load Progress</button>
+    <input type="file" id="progressFile" accept=".json" style="display:none" onchange="handleLoadProgress(event)">
+    <div class="sep"></div>
     <button class="btn-danger" onclick="resetCableDone()">⟲ Reset Cable</button>
     <button class="btn-danger" onclick="resetAllDone()">⟲ Reset All</button>
     <button class="btn-danger" onclick="resetToDefault()">🗑 Default Data</button>
@@ -1321,6 +1325,113 @@ function downloadCSV(){
     a.download = "dsub78_pinmap.csv";
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// === SAVE / LOAD PROGRESS ===
+function saveProgress(){
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g,"-").slice(0,19);
+    const activePins = Object.keys(pinData).filter(k => !isNC(pinData[k]));
+    const doneCount = activePins.filter(k => doneState[k]).length;
+
+    const snapshot = {
+        version: 1,
+        timestamp: now.toISOString(),
+        label: `${doneCount}/${activePins.length} done`,
+        doneState: doneState,
+        cableFilter: cableFilter.value,
+        rowFilter: activeRowFilter,
+        pinData: pinData,
+        cableTypesData: cableTypesData
+    };
+
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dsub78_progress_${ts}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // Brief visual feedback
+    const btn = document.querySelector('[onclick="saveProgress()"]');
+    const orig = btn.textContent;
+    btn.textContent = "Saved!";
+    btn.style.color = "#fff";
+    setTimeout(() => { btn.textContent = orig; btn.style.color = "#2ecc71"; }, 1500);
+}
+
+function handleLoadProgress(event){
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+        try {
+            const snapshot = JSON.parse(e.target.result);
+            if(!snapshot.doneState){
+                alert("Invalid progress file — no tracking data found.");
+                return;
+            }
+
+            const ts = snapshot.timestamp ? new Date(snapshot.timestamp).toLocaleString() : "unknown";
+            const label = snapshot.label || "";
+            if(!confirm(`Load progress from ${ts}?\n${label}\n\nThis will replace your current tracking state.`)) return;
+
+            // Restore pin data if present
+            if(snapshot.pinData){
+                pinData = snapshot.pinData;
+                lsSet(KEY_PINDATA, pinData);
+            }
+            if(snapshot.cableTypesData){
+                cableTypesData = snapshot.cableTypesData;
+                lsSet(KEY_CABLETYPES, cableTypesData);
+            }
+
+            // Restore done state
+            doneState = snapshot.doneState;
+            lsSet(KEY_DONE, doneState);
+
+            // Rebuild everything
+            updateSourceBadge();
+            buildCableGroups();
+            buildSplitPinMap();
+            buildGuideOrder();
+            buildDropdown();
+
+            // Restore cable filter
+            if(snapshot.cableFilter){
+                for(let i=0; i<cableFilter.options.length; i++){
+                    if(cableFilter.options[i].value === snapshot.cableFilter){
+                        cableFilter.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Restore row filter
+            if(snapshot.rowFilter) setRowFilter(snapshot.rowFilter);
+
+            buildConnector();
+            updateProgress();
+            filterPins();
+
+            // Enable tracking if not already on
+            if(!isTracking){
+                isTracking = true;
+                document.getElementById("trackingMode").checked = true;
+                connector.classList.add("tracking-mode");
+                trackingGroup.classList.add("tracking-active");
+                progressWrap.classList.add("visible");
+                updateProgress();
+            }
+
+            if(isGuiding) updateGuide();
+        } catch(err){
+            alert("Error reading progress file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
 }
 
 // === CSV UPLOAD ===
