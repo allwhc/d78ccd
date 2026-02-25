@@ -68,6 +68,23 @@ button:disabled{ opacity:0.35; cursor:not-allowed; }
 .row-btn.active{ background:#1a3a6a !important; border-color:#3a7bd5 !important; color:#fff !important; }
 .row.row-dimmed{ opacity:0.15; pointer-events:none; }
 
+/* Guide Mode */
+.checkbox-group.guide-active label{ color:#f0c030; }
+.checkbox-group.guide-active input[type="checkbox"]:checked{ background:#b8860b; border-color:#f0c030; }
+.pin.guide-next .outer{
+    box-shadow:0 0 12px 4px rgba(46,204,113,0.7), 0 0 24px 8px rgba(46,204,113,0.3) !important;
+    border:2px solid #2ecc71 !important;
+    animation:guidePulse 1.2s ease-in-out infinite;
+}
+@keyframes guidePulse{
+    0%,100%{ box-shadow:0 0 12px 4px rgba(46,204,113,0.7), 0 0 24px 8px rgba(46,204,113,0.3); }
+    50%{ box-shadow:0 0 20px 8px rgba(46,204,113,0.9), 0 0 40px 16px rgba(46,204,113,0.4); }
+}
+#guideInfo{
+    font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.9rem;
+    color:#2ecc71;text-align:center;margin:4px auto;
+}
+
 select{
     padding:7px 12px;
     font-family:'Outfit',sans-serif;
@@ -375,6 +392,10 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
         <input type="checkbox" id="trackingMode" onchange="toggleTrackingMode()">
         <label for="trackingMode">Pin Tracking</label>
     </div>
+    <div class="checkbox-group" id="guideGroup">
+        <input type="checkbox" id="guideMode" onchange="toggleGuideMode()">
+        <label for="guideMode">Guide Mode</label>
+    </div>
     <div class="sep"></div>
     <button onclick="downloadCSV()">📥 Download CSV</button>
     <button onclick="showUpload()">📤 Upload CSV</button>
@@ -405,6 +426,7 @@ select:focus{ outline:none; border-color:#3a7bd5; box-shadow:0 0 0 2px rgba(58,1
     <span id="activeCableName" style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:2.5rem;color:#f0c030;letter-spacing:2px;text-shadow:0 0 20px rgba(240,192,48,0.4);"></span>
     <span id="activeCablePins" style="display:block;font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;color:#6a8ab0;margin-top:2px;"></span>
 </div>
+<div id="guideInfo" style="display:none;"></div>
 <div class="connector" id="connector"></div>
 
 <!-- Bottom navigation -->
@@ -652,6 +674,7 @@ function initData(){
     updateSourceBadge();
     buildCableGroups();
     buildSplitPinMap();
+    buildGuideOrder();
     buildDropdown();
     buildConnector();
     updateProgress();
@@ -791,6 +814,7 @@ function buildConnector(){
                         pin.classList.toggle("done", doneState[currentPin]);
                         updateProgress();
                         if(cableFilter.value !== "ALL") filterPins();
+                        if(isGuiding) updateGuide();
                     } else if(isEditing){
                         const t = prompt("Pin label:", inner.innerText);
                         if(t !== null) inner.innerText = t;
@@ -875,6 +899,109 @@ function toggleTrackingMode(){
     }
     if(isTracking) updateProgress();
     filterPins();
+    if(isGuiding) updateGuide();
+}
+
+// === Guide Mode ===
+let isGuiding = false;
+let guideOrder = [];
+
+// Build optimal soldering order: inner rows first, center-out within each row
+function buildGuideOrder(){
+    // Row order: C (innermost) → B → D → A (outermost)
+    const rowPriority = [
+        {label:"C", start:40, count:20},
+        {label:"B", start:21, count:19},
+        {label:"D", start:60, count:19},
+        {label:"A", start:1,  count:20}
+    ];
+    guideOrder = [];
+    rowPriority.forEach(r => {
+        // Generate center-outward order for this row
+        const pins = [];
+        for(let i=0; i<r.count; i++) pins.push(r.start + i);
+        const mid = Math.floor(pins.length / 2);
+        const ordered = [];
+        for(let offset=0; offset<=mid; offset++){
+            if(mid + offset < pins.length) ordered.push(pins[mid + offset]);
+            if(offset > 0 && mid - offset >= 0) ordered.push(pins[mid - offset]);
+        }
+        // Only include pins that have data and are not NC
+        ordered.forEach(p => {
+            if(pinData[p] && !isNC(pinData[p])) guideOrder.push(p);
+        });
+    });
+}
+
+function getNextGuidePin(){
+    // Respect cable + row filters
+    const cableVal = cableFilter.value;
+    let cablePins = null;
+    if(cableVal !== "ALL"){
+        if(cableVal.startsWith("TYPE:")){
+            const typeName = cableVal.replace("TYPE:","");
+            cablePins = new Set();
+            sortedCables.forEach(cable => {
+                const info = cableTypesData[cable];
+                if((info ? info.type : "Other") === typeName)
+                    (cableGroups[cable]||[]).forEach(p => cablePins.add(p));
+            });
+        } else {
+            cablePins = new Set(cableGroups[cableVal] || []);
+        }
+    }
+    for(const p of guideOrder){
+        if(doneState[p]) continue;
+        if(cablePins && !cablePins.has(p)) continue;
+        if(!pinInActiveRow(p)) continue;
+        return p;
+    }
+    return null;
+}
+
+function updateGuide(){
+    const guideInfo = document.getElementById("guideInfo");
+    // Clear previous guide highlight
+    document.querySelectorAll(".pin.guide-next").forEach(el => el.classList.remove("guide-next"));
+    if(!isGuiding){
+        guideInfo.style.display = "none";
+        return;
+    }
+    const nextPin = getNextGuidePin();
+    if(nextPin === null){
+        guideInfo.style.display = "block";
+        guideInfo.innerHTML = "All pins done!";
+        return;
+    }
+    // Highlight the next pin
+    if(pinElements[nextPin]) pinElements[nextPin].classList.add("guide-next");
+    // Determine row label for this pin
+    let rowLabel = "A";
+    if(nextPin >= 21 && nextPin <= 39) rowLabel = "B";
+    else if(nextPin >= 40 && nextPin <= 59) rowLabel = "C";
+    else if(nextPin >= 60) rowLabel = "D";
+    const pinName = pinData[nextPin] ? pinData[nextPin].name : "";
+    // Find how many are left
+    let remaining = 0;
+    for(const p of guideOrder){
+        if(!doneState[p]){
+            const cableVal = cableFilter.value;
+            let ok = true;
+            if(cableVal !== "ALL" && !cableVal.startsWith("TYPE:")){
+                ok = (cableGroups[cableVal]||[]).includes(p);
+            }
+            if(ok && pinInActiveRow(p)) remaining++;
+        }
+    }
+    guideInfo.style.display = "block";
+    guideInfo.innerHTML = `Next → <span style="color:#f0c030;font-size:1.1rem;">Pin ${nextPin}</span> (Row ${rowLabel}) — ${pinName} — <span style="color:#6a8ab0;">${remaining} remaining</span>`;
+}
+
+function toggleGuideMode(){
+    isGuiding = document.getElementById("guideMode").checked;
+    document.getElementById("guideGroup").classList.toggle("guide-active", isGuiding);
+    if(isGuiding) buildGuideOrder();
+    updateGuide();
 }
 
 function toggleEditMode(){
@@ -1022,6 +1149,7 @@ function filterPins(){
     }
 
     updateNotes(val);
+    if(isGuiding) updateGuide();
 }
 
 function buildLegend(cables){
@@ -1238,6 +1366,7 @@ function parseCSVFile(file){
             updateSourceBadge();
             buildCableGroups();
             buildSplitPinMap();
+            buildGuideOrder();
             buildDropdown();
             buildConnector();
             updateProgress();
