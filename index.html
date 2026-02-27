@@ -72,17 +72,17 @@ button:disabled{ opacity:0.35; cursor:not-allowed; }
 .checkbox-group.guide-active label{ color:#f0c030; }
 .checkbox-group.guide-active input[type="checkbox"]:checked{ background:#b8860b; border-color:#f0c030; }
 .pin.guide-next .outer{
-    box-shadow:0 0 12px 4px rgba(46,204,113,0.7), 0 0 24px 8px rgba(46,204,113,0.3) !important;
-    border:2px solid #2ecc71 !important;
+    box-shadow:0 0 14px 5px rgba(255,255,255,0.7), 0 0 28px 10px rgba(255,255,255,0.3) !important;
+    border:2px solid #fff !important;
     animation:guidePulse 1.2s ease-in-out infinite;
 }
 @keyframes guidePulse{
-    0%,100%{ box-shadow:0 0 12px 4px rgba(46,204,113,0.7), 0 0 24px 8px rgba(46,204,113,0.3); }
-    50%{ box-shadow:0 0 20px 8px rgba(46,204,113,0.9), 0 0 40px 16px rgba(46,204,113,0.4); }
+    0%,100%{ box-shadow:0 0 14px 5px rgba(255,255,255,0.7), 0 0 28px 10px rgba(255,255,255,0.3); }
+    50%{ box-shadow:0 0 22px 10px rgba(255,255,255,0.95), 0 0 44px 18px rgba(255,255,255,0.4); }
 }
 #guideInfo{
     font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.9rem;
-    color:#2ecc71;text-align:center;margin:4px auto;
+    color:#e0e8f0;text-align:center;margin:4px auto;
 }
 
 select{
@@ -822,7 +822,7 @@ function buildConnector(){
                         pin.classList.toggle("done", doneState[currentPin]);
                         updateProgress();
                         if(cableFilter.value !== "ALL") filterPins();
-                        if(isGuiding) updateGuide();
+                        if(isGuiding){ guideCurrentIdx = -1; updateGuide(); }
                     } else if(isEditing){
                         const t = prompt("Pin label:", inner.innerText);
                         if(t !== null) inner.innerText = t;
@@ -914,6 +914,7 @@ function toggleTrackingMode(){
 let isGuiding = false;
 let guideOrder = [];
 let guideStrategy = "column-sweep";
+let guideCurrentIdx = -1; // manually navigated position, -1 = auto (next undone)
 
 // Row Sweep: complete each row inside-out, center-outward within each row
 function buildGuideOrder_RowSweep(){
@@ -999,12 +1000,13 @@ function buildGuideOrder(){
 
 function changeGuideStrategy(){
     guideStrategy = document.getElementById("guideStrategy").value;
+    guideCurrentIdx = -1;
     buildGuideOrder();
     updateGuide();
 }
 
-function getNextGuidePin(){
-    // Respect cable + row filters
+// Get filtered guide list (respects cable + row filters)
+function getFilteredGuideList(){
     const cableVal = cableFilter.value;
     let cablePins = null;
     if(cableVal !== "ALL"){
@@ -1020,13 +1022,40 @@ function getNextGuidePin(){
             cablePins = new Set(cableGroups[cableVal] || []);
         }
     }
-    for(const p of guideOrder){
-        if(doneState[p]) continue;
-        if(cablePins && !cablePins.has(p)) continue;
-        if(!pinInActiveRow(p)) continue;
-        return p;
+    return guideOrder.filter(p => {
+        if(cablePins && !cablePins.has(p)) return false;
+        if(!pinInActiveRow(p)) return false;
+        return true;
+    });
+}
+
+function getNextGuidePin(){
+    const filtered = getFilteredGuideList();
+    // If manually navigated, use that position
+    if(guideCurrentIdx >= 0){
+        if(guideCurrentIdx < filtered.length) return filtered[guideCurrentIdx];
+        return null;
+    }
+    // Auto: find first undone pin
+    for(const p of filtered){
+        if(!doneState[p]) return p;
     }
     return null;
+}
+
+function navGuide(dir){
+    const filtered = getFilteredGuideList();
+    if(filtered.length === 0) return;
+    // Find current position
+    const currentPin = getNextGuidePin();
+    let currentPos = currentPin ? filtered.indexOf(currentPin) : -1;
+    // Move in direction, skip done pins
+    let next = currentPos + dir;
+    while(next >= 0 && next < filtered.length && doneState[filtered[next]]) next += dir;
+    if(next >= 0 && next < filtered.length){
+        guideCurrentIdx = next;
+        updateGuide();
+    }
 }
 
 function updateGuide(){
@@ -1051,20 +1080,13 @@ function updateGuide(){
     else if(nextPin >= 40 && nextPin <= 59) rowLabel = "C";
     else if(nextPin >= 60) rowLabel = "D";
     const pinName = pinData[nextPin] ? pinData[nextPin].name : "";
-    // Find how many are left
-    let remaining = 0;
-    for(const p of guideOrder){
-        if(!doneState[p]){
-            const cableVal = cableFilter.value;
-            let ok = true;
-            if(cableVal !== "ALL" && !cableVal.startsWith("TYPE:")){
-                ok = (cableGroups[cableVal]||[]).includes(p);
-            }
-            if(ok && pinInActiveRow(p)) remaining++;
-        }
-    }
+    // Find how many are left and current position
+    const filtered = getFilteredGuideList();
+    const undone = filtered.filter(p => !doneState[p]);
+    const remaining = undone.length;
+    const posInUndone = undone.indexOf(nextPin) + 1;
     guideInfo.style.display = "block";
-    guideInfo.innerHTML = `Next → <span style="color:#f0c030;font-size:1.1rem;">Pin ${nextPin}</span> (Row ${rowLabel}) — ${pinName} — <span style="color:#6a8ab0;">${remaining} remaining</span>`;
+    guideInfo.innerHTML = `Next → <span style="color:#f0c030;font-size:1.1rem;">Pin ${nextPin}</span> (Row ${rowLabel}) — ${pinName} — <span style="color:#6a8ab0;">${posInUndone}/${remaining} remaining</span> <span style="color:#4a6a88;font-size:0.75rem;">[ ← → to navigate ]</span>`;
 }
 
 function toggleGuideMode(){
@@ -1090,13 +1112,20 @@ function toggleEditMode(){
     }
 }
 
-// === Keyboard: Left/Right = cables, Up/Down = rows ===
+// === Keyboard: Guide mode overrides Left/Right for pin nav ===
 document.addEventListener("keydown", function(e){
     if(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
-    if(e.key === "ArrowLeft"){ e.preventDefault(); navCable(-1); }
-    if(e.key === "ArrowRight"){ e.preventDefault(); navCable(1); }
-    if(e.key === "ArrowUp"){ e.preventDefault(); navRow(-1); }
-    if(e.key === "ArrowDown"){ e.preventDefault(); navRow(1); }
+    if(isGuiding){
+        if(e.key === "ArrowRight"){ e.preventDefault(); navGuide(1); }
+        else if(e.key === "ArrowLeft"){ e.preventDefault(); navGuide(-1); }
+        else if(e.key === "ArrowUp"){ e.preventDefault(); navRow(-1); }
+        else if(e.key === "ArrowDown"){ e.preventDefault(); navRow(1); }
+    } else {
+        if(e.key === "ArrowLeft"){ e.preventDefault(); navCable(-1); }
+        if(e.key === "ArrowRight"){ e.preventDefault(); navCable(1); }
+        if(e.key === "ArrowUp"){ e.preventDefault(); navRow(-1); }
+        if(e.key === "ArrowDown"){ e.preventDefault(); navRow(1); }
+    }
 });
 
 // === Row filter ===
@@ -1220,7 +1249,7 @@ function filterPins(){
     }
 
     updateNotes(val);
-    if(isGuiding) updateGuide();
+    if(isGuiding){ guideCurrentIdx = -1; updateGuide(); }
 }
 
 function buildLegend(cables){
