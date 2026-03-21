@@ -22,6 +22,8 @@ button{
 }
 button:hover{background:#1a3556;border-color:#3a7bd5;color:#fff;}
 .nav-btn{padding:7px 11px;font-size:1rem;min-width:34px;}
+.row-btn{padding:5px 10px;font-size:0.78rem;min-width:30px;font-weight:700;}
+.row-btn.active{background:#1a3a6a !important;border-color:#3a7bd5 !important;color:#fff !important;}
 
 select{
     padding:7px 12px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.82rem;
@@ -196,7 +198,7 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 
 /* Keyhole notch for round connectors */
 .keyhole{
-    position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+    position:absolute;
     width:16px;height:16px;background:#0a1628;border:3px solid #1a4a78;
     border-radius:50%;z-index:10;
 }
@@ -233,6 +235,23 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 
 <!-- Connector type selector -->
 <div class="type-selector" id="typeSelector"></div>
+
+<!-- Round connector options (hidden when D-Sub selected) -->
+<div class="toolbar-row" id="roundOptions" style="display:none;">
+    <div class="filter-group">
+        <span class="filter-label">Pin Direction:</span>
+        <button class="row-btn active" id="btnCW" onclick="setRoundDirection('cw')">CW (Rear View)</button>
+        <button class="row-btn" id="btnCCW" onclick="setRoundDirection('ccw')">CCW (Front View)</button>
+    </div>
+    <div class="sep"></div>
+    <div class="filter-group">
+        <span class="filter-label">Pin 1 Position:</span>
+        <button class="row-btn active" id="btnPosTop" onclick="setPin1Position('top')">Top</button>
+        <button class="row-btn" id="btnPosBottom" onclick="setPin1Position('bottom')">Bottom</button>
+        <button class="row-btn" id="btnPosLeft" onclick="setPin1Position('left')">Left</button>
+        <button class="row-btn" id="btnPosRight" onclick="setPin1Position('right')">Right</button>
+    </div>
+</div>
 
 <div class="toolbar">
     <button onclick="window.print()">🖨 Print</button>
@@ -307,7 +326,16 @@ const connectorTypes = [
     {id:"dsub62",name:"D-Sub 62",pins:62,rows:[21,20,21],shape:"dsub"},
     {id:"dsub78",name:"D-Sub 78",pins:78,rows:[20,19,20,19],shape:"dsub"},
     {id:"dsub104",name:"D-Sub 104",pins:104,rows:[21,20,21,20,22],shape:"dsub"},
+    {id:"round2",name:"Round 2",pins:2,rows:[2],shape:"round"},
+    {id:"round3",name:"Round 3",pins:3,rows:[3],shape:"round"},
+    {id:"round4",name:"Round 4",pins:4,rows:[4],shape:"round"},
+    {id:"round5",name:"Round 5",pins:5,rows:[5],shape:"round"},
+    {id:"round6",name:"Round 6",pins:6,rows:[6],shape:"round"},
     {id:"round7",name:"Round 7",pins:7,rows:[1,6],shape:"round"},
+    {id:"round8",name:"Round 8",pins:8,rows:[8],shape:"round"},
+    {id:"round10",name:"Round 10",pins:10,rows:[4,6],shape:"round"},
+    {id:"round12",name:"Round 12",pins:12,rows:[4,8],shape:"round"},
+    {id:"round16",name:"Round 16",pins:16,rows:[4,12],shape:"round"},
     {id:"round19",name:"Round 19",pins:19,rows:[1,6,12],shape:"round"},
     {id:"round37",name:"Round 37",pins:37,rows:[1,6,12,18],shape:"round"},
 ];
@@ -332,6 +360,8 @@ const bottomCableLabel = document.getElementById("bottomCableLabel");
 
 let isFront=false, isTracking=false, isEditing=false;
 let currentConnector = connectorTypes[6]; // D-Sub 78 default
+let roundDirection = "cw"; // "cw" = clockwise (rear view standard), "ccw" = counter-clockwise
+let pin1Position = "top"; // "top", "bottom", "left", "right"
 
 const KEY_PINDATA="connector_pin_data", KEY_CABLETYPES="connector_cable_types",
       KEY_DONE="connector_done_pins", KEY_CONNTYPE="connector_type";
@@ -429,15 +459,41 @@ function switchConnectorType(ct){
     typeBadge.textContent=ct.name.toUpperCase();
     document.querySelectorAll(".type-btn").forEach((b,i)=>b.classList.toggle("active",connectorTypes[i].id===ct.id));
     lsSet(KEY_CONNTYPE,ct.id);
-    // Clear and rebuild
-    pinData={}; cableTypesData={}; doneState={};
-    isCustomData=false;
+    // Keep existing pin data if custom — only remove pins beyond new connector's capacity
+    if(isCustomData){
+        const maxPin = ct.pins;
+        Object.keys(pinData).forEach(k => { if(Number(k) > maxPin) delete pinData[k]; });
+        Object.keys(doneState).forEach(k => { if(Number(k) > maxPin) delete doneState[k]; });
+        lsSet(KEY_PINDATA, pinData);
+        lsSet(KEY_DONE, doneState);
+    } else {
+        pinData={}; cableTypesData={}; doneState={};
+    }
     updateSourceBadge();
+    updateRoundOptions();
     buildCableGroups();buildSplitPinMap();
     buildDropdown();
     buildConnector();
     updateProgress();
     updateNotes("ALL");
+}
+
+function updateRoundOptions(){
+    document.getElementById("roundOptions").style.display = currentConnector.shape==="round" ? "" : "none";
+}
+
+function setRoundDirection(dir){
+    roundDirection = dir;
+    document.getElementById("btnCW").classList.toggle("active", dir==="cw");
+    document.getElementById("btnCCW").classList.toggle("active", dir==="ccw");
+    buildConnector();
+}
+
+function setPin1Position(pos){
+    pin1Position = pos;
+    document.querySelectorAll("#roundOptions .filter-group:last-child .row-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("btnPos" + pos.charAt(0).toUpperCase() + pos.slice(1)).classList.add("active");
+    buildConnector();
 }
 
 // ===== INIT =====
@@ -452,6 +508,7 @@ function initData(){
     if(savedPins){pinData=savedPins;cableTypesData=savedTypes||{};isCustomData=true;}
     else{pinData=JSON.parse(JSON.stringify(defaultPinData));cableTypesData=JSON.parse(JSON.stringify(defaultCableTypes));isCustomData=false;}
     updateSourceBadge();
+    updateRoundOptions();
     buildCableGroups();buildSplitPinMap();
     buildDropdown();
     buildConnector();
@@ -532,13 +589,27 @@ function buildDsubConnector(){
 function buildRoundConnector(){
     const el=document.createElement("div");
     el.className="connector-round";el.id="connector";
-    // Keyhole notch
-    const keyhole=document.createElement("div");keyhole.className="keyhole";el.appendChild(keyhole);
 
-    const cx=250,cy=250;// center of 500x500
+    // Keyhole notch — rotates with pin1Position
+    const keyhole=document.createElement("div");keyhole.className="keyhole";
+    const keyRotation={top:0, right:90, bottom:180, left:270};
+    keyhole.style.transform = `translateX(-50%) rotate(${keyRotation[pin1Position]}deg)`;
+    keyhole.style.transformOrigin = "50% 250px";
+    // Position keyhole based on pin1Position
+    const keyPos={top:{left:"50%",top:"-8px"}, bottom:{left:"50%",top:"492px"}, left:{left:"-8px",top:"50%"}, right:{left:"508px",top:"50%"}};
+    Object.assign(keyhole.style, keyPos[pin1Position]);
+    el.appendChild(keyhole);
+
+    const cx=250,cy=250;
     let pinNumber=1;
     const rings=currentConnector.rows;
     const totalRings=rings.length;
+
+    // Start angle based on pin1Position
+    const startAngles={top:-90, right:0, bottom:90, left:180};
+    const baseAngle=startAngles[pin1Position];
+    // Direction multiplier: CW=1, CCW=-1
+    const dirMul = roundDirection==="cw" ? 1 : -1;
 
     rings.forEach((count,ringIdx)=>{
         if(count===1 && ringIdx===0){
@@ -550,9 +621,8 @@ function buildRoundConnector(){
             el.appendChild(pin);pinElements[pinNumber]=pin;pinNumber++;
         } else {
             const radius=totalRings<=1?180:(80 + ringIdx*(180/(totalRings)));
-            const startAngle=-90;// top
             for(let i=0;i<count;i++){
-                const angle=startAngle+(i*(360/count));
+                const angle=baseAngle + dirMul * (i*(360/count));
                 const rad=angle*Math.PI/180;
                 const x=cx+radius*Math.cos(rad)-26;
                 const y=cy+radius*Math.sin(rad)-26;
