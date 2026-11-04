@@ -13,8 +13,8 @@ body{
 h2{font-weight:700;font-size:1.4rem;letter-spacing:0.5px;margin-top:16px;color:#c8daf0;}
 .sub{font-size:0.8rem;color:#6a8ab0;margin-top:2px;}
 
-.toolbar{margin:12px auto 4px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;max-width:1200px;}
-.toolbar-row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin:4px auto;max-width:1200px;}
+.toolbar{margin:12px auto 4px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;max-width:1300px;}
+.toolbar-row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin:4px auto;max-width:1300px;}
 
 button{
     padding:7px 14px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.82rem;
@@ -27,7 +27,7 @@ button:hover{background:#1a3556;border-color:#3a7bd5;color:#fff;}
 select{
     padding:7px 12px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.82rem;
     border:1px solid #2a4a6e;background:#12253e;color:#a0c4e8;border-radius:6px;
-    cursor:pointer;min-width:280px;transition:all 0.2s;appearance:none;
+    cursor:pointer;min-width:260px;transition:all 0.2s;appearance:none;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0c4e8' fill='none' stroke-width='2'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;
 }
@@ -49,6 +49,8 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 .checkbox-group label{font-size:0.8rem;font-weight:600;color:#a0c4e8;cursor:pointer;white-space:nowrap;}
 .checkbox-group.tracking-active label{color:#2ecc71;}
 .checkbox-group.tracking-active input[type="checkbox"]:checked{background:#1b8a3a;border-color:#2ecc71;}
+.checkbox-group.guide-active label{color:#f0c030;}
+.checkbox-group.guide-active input[type="checkbox"]:checked{background:#b8860b;border-color:#f0c030;}
 
 .badge{
     display:inline-block;padding:4px 12px;margin-left:8px;
@@ -58,39 +60,45 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 .badge-type{background:linear-gradient(135deg,#9c27b0,#7b1fa2);color:#fff;font-size:0.68rem;}
 .badge-source{background:linear-gradient(135deg,#3a7bd5,#2a5faa);color:#fff;font-size:0.68rem;}
 
+/* two-connector layout */
+.stage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:30px;margin:10px auto;}
+.stage-col{display:flex;flex-direction:column;align-items:center;}
+.stage-title{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:#8ac4f0;font-weight:700;margin-bottom:2px;}
+.stage-sub{font-size:0.72rem;color:#6a8ab0;margin-bottom:6px;}
+
 /* ===== Round Connector ===== */
 .connector-round{
-    position:relative;margin:18px auto 24px;
-    width:640px;height:640px;border-radius:50%;
-    background:
-        radial-gradient(circle at 50% 42%, #18324f 0%, #122844 62%, #0d1f38 100%);
-    border:6px solid #1a4a78;
-    box-shadow:0 0 50px rgba(26,74,120,0.35),inset 0 0 90px rgba(0,0,0,0.35);
+    position:relative;margin:4px auto 10px;
+    width:860px;height:860px;border-radius:50%;
+    background:radial-gradient(circle at 50% 42%, #18324f 0%, #122844 62%, #0d1f38 100%);
+    border:7px solid #1a4a78;
+    box-shadow:0 0 50px rgba(26,74,120,0.35),inset 0 0 110px rgba(0,0,0,0.35);
 }
-/* inner insert disk (lighter) */
 .connector-round::before{
     content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:86%;height:86%;border-radius:50%;
+    width:88%;height:88%;border-radius:50%;
     background:radial-gradient(circle at 50% 45%, #1d3858 0%, #15304e 70%, #102742 100%);
-    border:2px solid #24547f;box-shadow:inset 0 0 40px rgba(0,0,0,0.4);
+    border:2px solid #24547f;box-shadow:inset 0 0 50px rgba(0,0,0,0.4);
 }
 .connector-round.front-view{transform:scaleX(-1);}
 .connector-round.front-view .inner{transform:translate(-50%,-50%) scaleX(-1);}
-.connector-round.front-view .hole-letter{transform:scaleX(-1);}
+.connector-round.front-view .hole-letter{transform:translateX(-50%) scaleX(-1);}
 .connector-round.tracking-mode .pin{cursor:crosshair;}
 
-/* master keyway notches at top (two slots) */
-.keyway{position:absolute;top:-6px;width:26px;height:26px;background:#0a1628;border:6px solid #1a4a78;border-bottom:none;border-radius:6px 6px 0 0;z-index:6;}
-.keyway.k1{left:calc(50% - 40px);}
-.keyway.k2{left:calc(50% + 14px);}
+.keyway{position:absolute;top:-7px;width:30px;height:30px;background:#0a1628;border:7px solid #1a4a78;border-bottom:none;border-radius:7px 7px 0 0;z-index:6;}
+.keyway.k1{left:calc(50% - 46px);}
+.keyway.k2{left:calc(50% + 16px);}
 
 .pin{
-    position:absolute;width:62px;height:62px;cursor:pointer;
+    position:absolute;width:56px;height:56px;cursor:pointer;
     transform:translate(-50%,-50%);
     transition:opacity 0.3s ease,filter 0.3s ease;
 }
-.pin.dimmed{opacity:0.12;filter:grayscale(1);pointer-events:none;}
-.pin.highlighted .outer{box-shadow:0 0 0 3px rgba(58,123,213,0.55),0 2px 5px rgba(0,0,0,0.4);}
+.pin.dimmed{opacity:0.1;filter:grayscale(1);pointer-events:none;}
+.pin.highlighted .outer{box-shadow:0 0 0 3px rgba(58,123,213,0.6),0 2px 5px rgba(0,0,0,0.4);}
+
+/* cross-link highlight (from other connector) */
+.pin.linked .outer{box-shadow:0 0 0 4px #ff3b6b,0 0 16px 4px rgba(255,59,107,0.6)!important;}
 
 .outer{
     position:absolute;width:100%;height:100%;border-radius:50%;
@@ -99,50 +107,66 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 }
 .inner{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:70%;height:70%;border-radius:50%;
+    width:68%;height:68%;border-radius:50%;
     border:1px solid rgba(0,0,0,0.35);
     display:flex;align-items:center;justify-content:center;
-    font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;color:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;color:#fff;
     text-align:center;padding:1px;line-height:1.02;overflow:hidden;
     background:#1a202c;
 }
-/* letter engraved just outside the hole (datasheet style) */
 .hole-letter{
-    position:absolute;left:50%;top:-11px;transform:translateX(-50%);
-    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;
-    color:#9fc4e8;white-space:nowrap;pointer-events:none;
-    text-shadow:0 1px 2px #06101f;
+    position:absolute;left:50%;top:-12px;transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;
+    color:#9fc4e8;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px #06101f;
 }
 .pin.dimmed .hole-letter{color:#44607c;}
 
-/* empty/unused hole */
 .pin.empty .outer{
-    background:repeating-conic-gradient(#182438 0% 25%, #24324a 0% 50%) 50% / 10px 10px;
-    border:2px dashed rgba(120,150,180,0.35);
+    background:repeating-conic-gradient(#182438 0% 25%, #24324a 0% 50%) 50% / 11px 11px;
+    border:2px dashed rgba(120,150,180,0.3);
 }
 .pin.empty .inner{background:rgba(20,30,46,0.9);color:#5a7290;font-size:8px;}
-.pin.empty{opacity:0.5;cursor:default;}
+.pin.empty{opacity:0.45;cursor:default;}
 
-/* shared pin (W = shields 4/5/6) */
-.pin.shared .outer{border:2px dashed rgba(255,200,0,0.75);box-shadow:0 0 10px rgba(255,200,0,0.35);}
-
-/* done overlay (tracking) */
-.connector-round.tracking-mode .pin.done .outer::after{
+.connector-round.tracking-mode .pin.done .outer::after,
+.connector-dsub.tracking-mode .pin.done .outer::after{
     content:'\2713';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:30px;font-weight:900;color:rgba(0,255,100,0.6);text-shadow:0 0 6px rgba(0,200,80,0.5);
     pointer-events:none;z-index:4;
 }
-.connector-round.tracking-mode .pin.done .outer{box-shadow:0 0 10px rgba(0,200,80,0.45);}
+.connector-round.tracking-mode .pin.done .outer,
+.connector-dsub.tracking-mode .pin.done .outer{box-shadow:0 0 10px rgba(0,200,80,0.45);}
 
-/* show letters/78pin mode */
-.connector-round.show-ids .inner .nm{display:none;}
-.connector-round.show-ids .inner .idlbl{display:flex;}
-.inner .idlbl{display:none;flex-direction:column;align-items:center;}
-.inner .idlbl .L{font-size:12px;color:#ffd86b;}
-.inner .idlbl .p78{font-size:8px;color:#9fe8c0;}
+/* guide highlight */
+.pin.guide-next .outer{
+    box-shadow:0 0 16px 6px rgba(255,255,255,0.75),0 0 30px 12px rgba(255,255,255,0.3)!important;
+    border:2px solid #fff!important;animation:guidePulse 1.2s ease-in-out infinite;
+}
+@keyframes guidePulse{
+    0%,100%{box-shadow:0 0 16px 6px rgba(255,255,255,0.75),0 0 30px 12px rgba(255,255,255,0.3);}
+    50%{box-shadow:0 0 24px 11px rgba(255,255,255,0.95),0 0 46px 20px rgba(255,255,255,0.4);}
+}
+
+/* ===== D-Sub 78 (other end) ===== */
+.connector-dsub{
+    position:relative;margin:4px auto 10px;padding:34px 46px;
+    background:linear-gradient(145deg,#0f2640,#162d4a);border-radius:56px;
+    border:3px solid #1a4a78;width:max-content;
+    box-shadow:0 0 30px rgba(26,74,120,0.3),inset 0 0 40px rgba(0,0,0,0.2);
+}
+.connector-dsub.front-view{transform:scaleX(-1);}
+.connector-dsub.front-view .inner{transform:translate(-50%,-50%) scaleX(-1);}
+.connector-dsub.front-view .hole-letter{transform:translateX(-50%) scaleX(-1);}
+.connector-dsub .row{display:flex;gap:9px;justify-content:center;margin:9px 0;}
+.connector-dsub .row.offset{margin-left:26px;}
+.connector-dsub .pin{position:relative;width:46px;height:46px;transform:none;}
+.connector-dsub .inner{font-size:8px;}
+.connector-dsub .hole-letter{top:auto;bottom:-13px;font-size:9px;color:#7aa0c0;}
 
 .stats-bar{margin:0 auto 4px;font-size:0.78rem;color:#5a8ab0;font-family:'JetBrains Mono',monospace;}
 .stats-bar span{color:#8ac4f0;font-weight:700;}
+
+#guideInfo{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.9rem;color:#e0e8f0;margin:6px auto;}
 
 .progress-wrap{margin:4px auto 8px;max-width:460px;display:none;}
 .progress-wrap.visible{display:block;}
@@ -152,57 +176,45 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
 
 .cable-legend{
     display:none;flex-wrap:wrap;justify-content:center;gap:5px 12px;margin:0 auto 12px;
-    max-width:900px;padding:8px 14px;background:rgba(18,37,62,0.7);border:1px solid #1a3a5a;border-radius:10px;
+    max-width:980px;padding:8px 14px;background:rgba(18,37,62,0.7);border:1px solid #1a3a5a;border-radius:10px;
 }
 .cable-legend.visible{display:flex;}
-.legend-item{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#9bc0e0;display:flex;align-items:center;gap:5px;}
+.legend-item{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#9bc0e0;display:flex;align-items:center;gap:5px;cursor:pointer;}
 .legend-item.is-done{color:#2ecc71;text-decoration:line-through;text-decoration-color:#2a8a4a;}
 .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,0.4);}
 
-.notes-panel{
-    display:none;margin:0 auto 24px;max-width:960px;text-align:left;padding:14px 20px;
-    background:rgba(18,37,62,0.7);border:1px solid #1a3a5a;border-radius:10px;
-}
+.notes-panel{display:none;margin:0 auto 24px;max-width:980px;text-align:left;padding:14px 20px;background:rgba(18,37,62,0.7);border:1px solid #1a3a5a;border-radius:10px;}
 .notes-panel.visible{display:block;}
 .notes-panel h3{font-size:0.85rem;color:#f0a030;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;}
-.note-item{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-family:'JetBrains Mono',monospace;font-size:0.75rem;}
-.note-item:last-child{border-bottom:none;}
-.note-pin{color:#ffd86b;font-weight:700;white-space:nowrap;min-width:46px;}
-.note-name{color:#8ac4f0;font-weight:700;white-space:nowrap;min-width:150px;}
-.note-desc{color:#d0dce8;}
 
 .btn-danger{border-color:#6e2a2a;color:#e8a0a0;background:#2e1218;}
 .btn-danger:hover{background:#4a1a22;border-color:#d53a3a;color:#fff;}
-
 .sep{width:1px;height:24px;background:#2a4a6e;margin:0 2px;}
 
-/* mapping table */
-.map-table-wrap{max-width:1000px;margin:6px auto 30px;overflow-x:auto;}
+.map-table-wrap{max-width:1050px;margin:6px auto 30px;overflow-x:auto;}
 table.map{border-collapse:collapse;width:100%;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
 table.map th,table.map td{border:1px solid #1e3c5c;padding:4px 7px;text-align:left;white-space:nowrap;}
 table.map th{background:#12253e;color:#8ac4f0;position:sticky;top:0;}
 table.map td{color:#c4d6ea;}
+table.map tr{cursor:pointer;}
 table.map tr:nth-child(even) td{background:rgba(18,37,62,0.4);}
-table.map tr.row-hi td{background:rgba(58,123,213,0.25)!important;}
+table.map tr.row-hi td{background:rgba(255,59,107,0.22)!important;}
 
 @media print{
     body{background:#fff;color:#1a1a1a;}
-    nav,.toolbar,.toolbar-row,.stats-bar,.progress-wrap,.sub{display:none!important;}
-    .connector-round{background:#fff;border-color:#333;box-shadow:none;}
+    nav,.toolbar,.toolbar-row,.stats-bar,.progress-wrap,.sub,#guideInfo{display:none!important;}
+    .connector-round,.connector-dsub{background:#fff;border-color:#333;box-shadow:none;}
     .connector-round::before{background:#f6f3ec;border-color:#888;box-shadow:none;}
     .keyway{background:#fff;border-color:#333;}
     .hole-letter{color:#111;text-shadow:none;}
-    .inner .idlbl .L{color:#8a6010;}.inner .idlbl .p78{color:#1a6a3a;}
     .pin.empty{opacity:0.3;}
     .cable-legend,.notes-panel{background:#f3efe4;border-color:#999;}
-    table.map th{background:#e8edf4;color:#1a3a5a;}
-    table.map td{color:#111;}
+    table.map th{background:#e8edf4;color:#1a3a5a;}table.map td{color:#111;}
 }
 </style>
 </head>
 <body>
 
-<!-- Site Navigation -->
 <nav style="display:flex;justify-content:center;flex-wrap:wrap;gap:12px;padding:10px 16px;background:rgba(12,25,45,0.95);border-bottom:1px solid #1a3a5a;">
     <a href="index.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;">D-Sub 78 Pin Mapper</a>
     <a href="universal_viewer.html" style="padding:6px 16px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;color:#a0c4e8;background:#12253e;border:1px solid #2a4a6e;border-radius:6px;text-decoration:none;">Universal Viewer</a>
@@ -215,9 +227,8 @@ table.map tr.row-hi td{background:rgba(58,123,213,0.25)!important;}
     <span class="badge badge-type">22-55 INSERT</span>
     <span class="badge badge-source">E2V DEWAR &middot; IDSAC</span>
 </h2>
-<div class="sub">Insert arrangement 22-55 &middot; 55 contacts &middot; 28 used by this cable &middot; holes &amp; letters placed from datasheet (pcd connectors.pdf, p.5)</div>
+<div class="sub">Insert arrangement 22-55 &middot; 55 contacts &middot; 30 wired by this cable &middot; hole &amp; letter positions from datasheet (pcd connectors.pdf p.5)</div>
 
-<!-- Toolbar -->
 <div class="toolbar">
     <button onclick="window.print()">&#128424; Print</button>
     <button onclick="toggleView()">&#128260; Front/Rear</button>
@@ -235,6 +246,10 @@ table.map tr.row-hi td{background:rgba(58,123,213,0.25)!important;}
         <input type="checkbox" id="showIds" onchange="toggleIds()">
         <label for="showIds">Pin Numbers (letter + 78-pin)</label>
     </div>
+    <div class="checkbox-group" id="guideGroup">
+        <input type="checkbox" id="guideMode" onchange="toggleGuideMode()">
+        <label for="guideMode">Guide Mode (center&rarr;out)</label>
+    </div>
     <div class="checkbox-group" id="trackingGroup">
         <input type="checkbox" id="trackingMode" onchange="toggleTrackingMode()">
         <label for="trackingMode">Pin Tracking</label>
@@ -243,20 +258,35 @@ table.map tr.row-hi td{background:rgba(58,123,213,0.25)!important;}
         <input type="checkbox" id="showEmpty" checked onchange="toggleEmpty()">
         <label for="showEmpty">Show Unused Holes</label>
     </div>
+    <div class="checkbox-group">
+        <input type="checkbox" id="showOther" onchange="toggleOther()">
+        <label for="showOther">Show 78-pin (other end)</label>
+    </div>
     <div class="sep"></div>
     <button onclick="downloadCSV()">&#128229; Download CSV</button>
-    <div class="sep"></div>
     <button class="btn-danger" onclick="resetAllDone()">&#10226; Reset Tracking</button>
 </div>
 
 <div class="stats-bar" id="statsBar"></div>
+<div id="guideInfo" style="display:none;"></div>
 <div class="progress-wrap" id="progressWrap">
     <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
     <div class="progress-text" id="progressText"></div>
 </div>
 <div class="cable-legend" id="cableLegend"></div>
 
-<div id="connectorWrap"></div>
+<div class="stage">
+    <div class="stage-col">
+        <div class="stage-title">55-PIN ROUND MALE &middot; 62IN-16F-22-55S</div>
+        <div class="stage-sub">click a hole &rarr; its 78-pin lights up on the other end</div>
+        <div id="roundWrap"></div>
+    </div>
+    <div class="stage-col" id="otherCol" style="display:none;">
+        <div class="stage-title">78-PIN D-SUB FEMALE (OTHER END)</div>
+        <div class="stage-sub">click a pin &rarr; its 55-pin letter lights up</div>
+        <div id="dsubWrap"></div>
+    </div>
+</div>
 
 <div class="toolbar-row" style="margin-bottom:12px;">
     <button class="nav-btn" onclick="navCable(-1)">&#9664; Prev</button>
@@ -269,25 +299,29 @@ table.map tr.row-hi td{background:rgba(58,123,213,0.25)!important;}
     <div id="notesContent"></div>
 </div>
 
-<!-- Full mapping table -->
 <div class="map-table-wrap">
     <table class="map" id="mapTable">
         <thead><tr>
-            <th>55-pin</th><th>Name</th><th>Signal</th><th>Ref</th><th>78-pin</th><th>Colour</th><th>Cable</th><th>Cable type</th>
+            <th>78-pin</th><th>55-round</th><th>Name</th><th>Colour</th><th>Cable type</th><th>Description</th>
         </tr></thead>
         <tbody id="mapBody"></tbody>
     </table>
 </div>
 
 <script>
-// ===== 55-pin dataset (letter -> record). Coordinates are center-origin, normalized to insert radius. =====
-// Hole positions extracted from datasheet insert-arrangement 22-55 (pcd connectors.pdf p.5).
-// Mapping (letter, signal, 78-pin source, colour) from cable_IDSAC_55_pin.xlsx.
-const PINS = {"A":{"x":0.1966,"y":-0.6808,"name":"REG-Ck2","signal":"REGISTOR Clock-2","ref":"RΦ1L","p78":78,"color":"Blue","cable":"C1-P2","desc":"2 CORE CABLE"},"B":{"x":0.3896,"y":-0.5789,"name":"IMG-Ck2","signal":"IMAGE Clock-2","ref":"IΦ2","p78":77,"color":"Red","cable":"C1-P2","desc":"2 CORE CABLE"},"C":{"x":0.5825,"y":-0.4806,"name":"IMG-Ck3","signal":"IMAGE Clock-3","ref":"IΦ3","p78":56,"color":"Red","cable":"C1-P3","desc":"2 CORE CABLE"},"D":{"x":0.7755,"y":-0.193,"name":"REG-Ck1","signal":"REGISTOR Clock-1","ref":"RΦ","p78":76,"color":"Blue","cable":"C1-P1","desc":"2 CORE CABLE"},"E":{"x":0.7755,"y":0.0,"name":"REG-Ck7","signal":"REGISTOR Clock-7","ref":"SW","p78":38,"color":"Brown","cable":"C2-P2","desc":"5 CORE CABLE"},"F":{"x":0.7755,"y":0.1966,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"G":{"x":0.5862,"y":0.4842,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"H":{"x":0.3896,"y":0.5789,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"J":{"x":0.1966,"y":0.6772,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"K":{"x":-0.1893,"y":0.6808,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"L":{"x":-0.3823,"y":0.5789,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"M":{"x":-0.5789,"y":0.4842,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"N":{"x":-0.7718,"y":0.193,"name":"HTR-1","signal":"Heater-1","ref":"","p78":12,"color":"Grey","cable":"C2-P3","desc":"5 CORE CABLE"},"P":{"x":-0.7718,"y":0.0036,"name":"CATHODE","signal":"CATHHODE","ref":"","p78":14,"color":"Yellow","cable":"C2-P3","desc":"5 CORE CABLE"},"R":{"x":-0.7755,"y":-0.193,"name":"DIODE","signal":"DIODE SENSE","ref":"","p78":13,"color":"Green","cable":"C2-P3","desc":"5 CORE CABLE"},"S":{"x":-0.5825,"y":-0.4806,"name":"IMG-Ck1","signal":"IMAGE Clock-1","ref":"IΦ1","p78":58,"color":"Red","cable":"C1-P1","desc":"2 CORE CABLE"},"T":{"x":-0.3786,"y":-0.5789,"name":"REG-Ck4","signal":"REGISTOR Clock-4","ref":"RΦ2L","p78":55,"color":"Green","cable":"C2-P2","desc":"5 CORE CABLE"},"U":{"x":-0.1893,"y":-0.6808,"name":"REG-Ck6","signal":"REGISTOR Clock-6","ref":"RΦ3","p78":59,"color":"Grey","cable":"C2-P2","desc":"5 CORE CABLE"},"V":{"x":0.0,"y":-0.5752,"name":"REG-Ck8","signal":"REGISTOR Clock-8","ref":"DG","p78":19,"color":"White","cable":"C2-P2","desc":"5 CORE CABLE"},"W":{"x":0.1966,"y":-0.4806,"name":"SHLD-4","signal":"SHEILD-4","ref":"","p78":69,"color":"Shield","cable":"C2-P1","desc":"5 CORE CABLE","note":"SHEILD-5(78:10) & SHEILD-6(78:64) also soldered to W","sharedP78":[69,10,64]},"X":{"x":0.3896,"y":-0.3823,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"Y":{"x":0.5898,"y":-0.2876,"name":"SHLD-2","signal":"SHEILD-2","ref":"","p78":73,"color":"Shield","cable":"C1-P2","desc":"2 CORE CABLE"},"Z":{"x":0.5862,"y":-0.0947,"name":"REG-Ck5","signal":"REGISTOR Clock-5","ref":"RΦ2R","p78":57,"color":"Yellow","cable":"C2-P2","desc":"5 CORE CABLE"},"a":{"x":0.5862,"y":0.0983,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"b":{"x":0.5862,"y":0.2913,"name":"REG-Ck3","signal":"REGISTOR Clock-3","ref":"RΦ1R","p78":74,"color":"Blue","cable":"C1-P3","desc":"2 CORE CABLE"},"c":{"x":0.3896,"y":0.3859,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"d":{"x":0.1966,"y":0.4842,"name":"VID-1","signal":"VIDEO Input-1","ref":"OSL","p78":60,"color":"Signal","cable":"C3-P1","desc":"Coaxial cable"},"e":{"x":0.0,"y":0.5789,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"f":{"x":-0.1893,"y":0.4879,"name":"SHLD","signal":"SHEILD","ref":"","p78":22,"color":"Shield","cable":"C3-P2","desc":"Coaxial cable"},"g":{"x":-0.3823,"y":0.3859,"name":"VID-2","signal":"VIDEO Input-2","ref":"OSR","p78":61,"color":"Signal","cable":"C3-P2","desc":"Coaxial cable"},"h":{"x":-0.5789,"y":0.2913,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"i":{"x":-0.5825,"y":0.0983,"name":"HTR-2","signal":"Heater-2","ref":"","p78":32,"color":"Brown","cable":"C2-P3","desc":"5 CORE CABLE"},"j":{"x":-0.5825,"y":-0.0947,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"k":{"x":-0.5862,"y":-0.2876,"name":"SHLD-1","signal":"SHEILD-1","ref":"","p78":54,"color":"Shield","cable":"C1-P1","desc":"2 CORE CABLE"},"m":{"x":-0.3823,"y":-0.3823,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"n":{"x":-0.1893,"y":-0.4806,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"p":{"x":0.0036,"y":-0.3823,"name":"SHLD-3","signal":"SHEILD-3","ref":"","p78":15,"color":"Shield","cable":"C1-P3","desc":"2 CORE CABLE"},"q":{"x":0.1966,"y":-0.2876,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"r":{"x":0.3896,"y":-0.1893,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"s":{"x":0.3896,"y":0.0036,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"t":{"x":0.3896,"y":0.193,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"u":{"x":0.1966,"y":0.2913,"name":"SHLD","signal":"SHEILD","ref":"","p78":21,"color":"Shield","cable":"C3-P1","desc":"Coaxial cable"},"v":{"x":0.0,"y":0.3859,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"w":{"x":-0.1893,"y":0.2949,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"x":{"x":-0.3823,"y":0.1966,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"y":{"x":-0.3823,"y":0.0,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"z":{"x":-0.3786,"y":-0.193,"name":"U_BIAS5","signal":"U_BIAS-5","ref":"DD","p78":8,"color":"Grey","cable":"C2-P1","desc":"5 CORE CABLE"},"AA":{"x":-0.193,"y":-0.2876,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"BB":{"x":0.0,"y":-0.1893,"name":"U_BIAS8","signal":"U_BIAS-8","ref":"RDR+RDL","p78":67,"color":"White","cable":"C2-P1","desc":"5 CORE CABLE"},"CC":{"x":0.1966,"y":-0.0947,"name":"B_BIAS2","signal":"B_BIAS-2","ref":"OG1","p78":26,"color":"Yellow","cable":"C2-P1","desc":"5 CORE CABLE"},"DD":{"x":0.1966,"y":0.0983,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"EE":{"x":0.0036,"y":0.1966,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"FF":{"x":-0.1893,"y":0.0983,"name":"","signal":"","ref":"","p78":null,"color":"","cable":"","desc":""},"GG":{"x":-0.1893,"y":-0.0947,"name":"U_BIAS7","signal":"U_BIAS-7","ref":"ODL+ODR","p78":47,"color":"Brown","cable":"C2-P1","desc":"5 CORE CABLE"},"HH":{"x":0.0036,"y":0.0036,"name":"B_BIAS1","signal":"B_BIAS-1","ref":"OG2","p78":6,"color":"Green","cable":"C2-P1","desc":"5 CORE CABLE"}};
+// ===== 55-pin dataset (letter -> record). Positions from datasheet 22-55 insert (pcd connectors.pdf p.5). =====
+// Mapping (letter, 78-pin, name, colours, signal) from "55round - Sheet3.csv".
+const PINS = {"A":{"x":0.1966,"y":-0.6808,"name":"C2-2","signal":"REGISTOR Clock-2","oc":"blue","ic":"blue","p78":78,"cable":"C2","ctype":"2 CORE CABLE"},"B":{"x":0.3896,"y":-0.5789,"name":"C2-1","signal":"IMAGE Clock-2","oc":"Red","ic":"red","p78":77,"cable":"C2","ctype":"2 CORE CABLE"},"C":{"x":0.5825,"y":-0.4806,"name":"C3-1","signal":"IMAGE Clock-3","oc":"Red","ic":"red","p78":56,"cable":"C3","ctype":"2 CORE CABLE"},"D":{"x":0.7755,"y":-0.193,"name":"C1-2","signal":"REGISTOR Clock-1","oc":"blue","ic":"blue","p78":76,"cable":"C1","ctype":"2 CORE CABLE"},"E":{"x":0.7755,"y":0.0,"name":"C5-4","signal":"REGISTOR Clock-7","oc":"white","ic":"white","p78":38,"cable":"C5","ctype":"5 CORE CABLE"},"F":{"x":0.7755,"y":0.1966,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"G":{"x":0.5862,"y":0.4842,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"H":{"x":0.3896,"y":0.5789,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"J":{"x":0.1966,"y":0.6772,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"K":{"x":-0.1893,"y":0.6808,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"L":{"x":-0.3823,"y":0.5789,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"M":{"x":-0.5789,"y":0.4842,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"N":{"x":-0.7718,"y":0.193,"name":"C6-3","signal":"Heater-1","oc":"brown","ic":"brown","p78":12,"cable":"C6","ctype":"5 CORE CABLE"},"P":{"x":-0.7718,"y":0.0036,"name":"C6-2","signal":"CATHHODE","oc":"yellow","ic":"yellow","p78":14,"cable":"C6","ctype":"5 CORE CABLE"},"R":{"x":-0.7755,"y":-0.193,"name":"C6-1","signal":"DIODE SENSE","oc":"Green","ic":"Green","p78":13,"cable":"C6","ctype":"5 CORE CABLE"},"S":{"x":-0.5825,"y":-0.4806,"name":"C1-1","signal":"IMAGE Clock-1","oc":"Red","ic":"red","p78":58,"cable":"C1","ctype":"2 CORE CABLE"},"T":{"x":-0.3786,"y":-0.5789,"name":"C5-1","signal":"REGISTOR Clock-4","oc":"Green","ic":"Green","p78":55,"cable":"C5","ctype":"5 CORE CABLE"},"U":{"x":-0.1893,"y":-0.6808,"name":"C5-3","signal":"REGISTOR Clock-6","oc":"brown","ic":"brown","p78":59,"cable":"C5","ctype":"5 CORE CABLE"},"V":{"x":0.0,"y":-0.5752,"name":"C5-5","signal":"REGISTOR Clock-8","oc":"grey","ic":"grey","p78":19,"cable":"C5","ctype":"5 CORE CABLE"},"W":{"x":0.1966,"y":-0.4806,"name":"C4-S","signal":"SHEILD-4","oc":"shield","ic":"shield","p78":69,"cable":"C4","ctype":"5 CORE CABLE"},"X":{"x":0.3896,"y":-0.3823,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"Y":{"x":0.5898,"y":-0.2876,"name":"C2-S","signal":"SHEILD-2","oc":"shield","ic":"shield","p78":73,"cable":"C2","ctype":"2 CORE CABLE"},"Z":{"x":0.5862,"y":-0.0947,"name":"C5-2","signal":"REGISTOR Clock-5","oc":"yellow","ic":"yellow","p78":57,"cable":"C5","ctype":"5 CORE CABLE"},"a":{"x":0.5862,"y":0.0983,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"b":{"x":0.5862,"y":0.2913,"name":"C3-2","signal":"REGISTOR Clock-3","oc":"blue","ic":"blue","p78":74,"cable":"C3","ctype":"2 CORE CABLE"},"c":{"x":0.3896,"y":0.3859,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"d":{"x":0.1966,"y":0.4842,"name":"C7-1","signal":"VIDEO Input-1","oc":"Signal","ic":"Signal","p78":60,"cable":"C7","ctype":"Coaxial cable"},"e":{"x":0.0,"y":0.5789,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"f":{"x":-0.1893,"y":0.4879,"name":"C8-S","signal":"SHEILD","oc":"shield","ic":"shield","p78":22,"cable":"C8","ctype":"Coaxial cable"},"g":{"x":-0.3823,"y":0.3859,"name":"C8-1","signal":"VIDEO Input-2","oc":"Signal","ic":"Signal","p78":61,"cable":"C8","ctype":"Coaxial cable"},"h":{"x":-0.5789,"y":0.2913,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"i":{"x":-0.5825,"y":0.0983,"name":"C6-4","signal":"Heater-2","oc":"white","ic":"white","p78":32,"cable":"C6","ctype":"5 CORE CABLE"},"j":{"x":-0.5825,"y":-0.0947,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"k":{"x":-0.5862,"y":-0.2876,"name":"C1-S","signal":"SHEILD-1","oc":"shield","ic":"shield","p78":54,"cable":"C1","ctype":"2 CORE CABLE"},"m":{"x":-0.3823,"y":-0.3823,"name":"C5-S","signal":"SHEILD-5","oc":"shield","ic":"shield","p78":10,"cable":"C5","ctype":"5 CORE CABLE"},"n":{"x":-0.1893,"y":-0.4806,"name":"C6-S","signal":"SHEILD-6","oc":"shield","ic":"shield","p78":64,"cable":"C6","ctype":"5 CORE CABLE"},"p":{"x":0.0036,"y":-0.3823,"name":"C3-S","signal":"SHEILD-3","oc":"shield","ic":"shield","p78":15,"cable":"C3","ctype":"2 CORE CABLE"},"q":{"x":0.1966,"y":-0.2876,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"r":{"x":0.3896,"y":-0.1893,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"s":{"x":0.3896,"y":0.0036,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"t":{"x":0.3896,"y":0.193,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"u":{"x":0.1966,"y":0.2913,"name":"C7-S","signal":"SHEILD","oc":"shield","ic":"shield","p78":21,"cable":"C7","ctype":"Coaxial cable"},"v":{"x":0.0,"y":0.3859,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"w":{"x":-0.1893,"y":0.2949,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"x":{"x":-0.3823,"y":0.1966,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"y":{"x":-0.3823,"y":0.0,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"z":{"x":-0.3786,"y":-0.193,"name":"C4-3","signal":"U_BIAS-5","oc":"brown","ic":"brown","p78":8,"cable":"C4","ctype":"5 CORE CABLE"},"AA":{"x":-0.193,"y":-0.2876,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"BB":{"x":0.0,"y":-0.1893,"name":"C4-5","signal":"U_BIAS-8","oc":"grey","ic":"grey","p78":67,"cable":"C4","ctype":"5 CORE CABLE"},"CC":{"x":0.1966,"y":-0.0947,"name":"C4-2","signal":"B_BIAS-2","oc":"yellow","ic":"yellow","p78":26,"cable":"C4","ctype":"5 CORE CABLE"},"DD":{"x":0.1966,"y":0.0983,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"EE":{"x":0.0036,"y":0.1966,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"FF":{"x":-0.1893,"y":0.0983,"name":"","signal":"","oc":"","ic":"","p78":null,"cable":"","ctype":""},"GG":{"x":-0.1893,"y":-0.0947,"name":"C4-4","signal":"U_BIAS-7","oc":"white","ic":"white","p78":47,"cable":"C4","ctype":"5 CORE CABLE"},"HH":{"x":0.0036,"y":0.0036,"name":"C4-1","signal":"B_BIAS-1","oc":"Green","ic":"Green","p78":6,"cable":"C4","ctype":"5 CORE CABLE"}};
 
 const LETTER_ORDER = ["A","B","C","D","E","F","G","H","J","K","L","M","N","P","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","m","n","p","q","r","s","t","u","v","w","x","y","z","AA","BB","CC","DD","EE","FF","GG","HH"];
-const CABLE_ORDER = ["C1-P1","C1-P2","C1-P3","C2-P1","C2-P2","C2-P3","C3-P1","C3-P2"];
-const CABLE_DESC = {"C1-P1":"2 CORE","C1-P2":"2 CORE","C1-P3":"2 CORE","C2-P1":"5 CORE","C2-P2":"5 CORE","C2-P3":"5 CORE","C3-P1":"Coaxial","C3-P2":"Coaxial"};
+const CABLE_ORDER = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"];
+const GUIDE_ORDER = ["HH", "BB", "GG", "CC", "u", "p", "z", "n", "W", "d", "f", "m", "g", "V", "i", "Z", "k", "b", "Y", "T", "B", "U", "A", "C", "S", "P", "E", "N", "D", "R"]; // center -> out
+
+// ===== D-Sub 78 geometry: rows 20/19/20/19, pins 1..78 =====
+const DSUB_ROWS=[20,19,20,19];
+// letter for a given 78-pin (reverse map)
+const P78_TO_LETTER={};
+LETTER_ORDER.forEach(L=>{ if(PINS[L].p78!=null) P78_TO_LETTER[PINS[L].p78]=L; });
 
 const namedColors = {
     shield:"#4a5568","dark grey":"#37474f",grey:"#90a0b0","light blue":"#4fc3f7",
@@ -307,7 +341,9 @@ function textColorFor(bg){
 }
 
 // ===== state =====
-const connectorWrap=document.getElementById("connectorWrap");
+const roundWrap=document.getElementById("roundWrap");
+const dsubWrap=document.getElementById("dsubWrap");
+const otherCol=document.getElementById("otherCol");
 const viewBadge=document.getElementById("viewBadge");
 const cableFilter=document.getElementById("cableFilter");
 const statsBar=document.getElementById("statsBar");
@@ -316,198 +352,280 @@ const progressWrap=document.getElementById("progressWrap");
 const progressBar=document.getElementById("progressBar");
 const progressText=document.getElementById("progressText");
 const trackingGroup=document.getElementById("trackingGroup");
+const guideGroup=document.getElementById("guideGroup");
 const notesPanel=document.getElementById("notesPanel");
 const notesContent=document.getElementById("notesContent");
 const bottomCableLabel=document.getElementById("bottomCableLabel");
+const guideInfo=document.getElementById("guideInfo");
 
-let isFront=false, isTracking=false, showIds=false, showEmpty=true;
-let pinElements={}, doneState={};
-const KEY_DONE="round55_done_pins";
-const SIZE=640, INSERT_R=0.86*SIZE/2; // insert disk radius in px
+let isFront=false, isTracking=false, showIds=false, showEmpty=true, showOther=false, isGuiding=false;
+let roundEl=null, dsubEl=null;
+let pinEls={};      // letter -> round pin element
+let dsubEls={};     // 78pin number -> dsub pin element
+let doneState={}, guideIdx=-1;
+const KEY_DONE="round55_done_v2";
+const SIZE=860, INSERT_R=0.88*SIZE/2;
 
 function lsGet(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-
 function isUsed(L){ return PINS[L] && PINS[L].p78!=null; }
+function pinColor(L){ const d=PINS[L]; return resolveColor(d.oc||d.ic||""); }
 
-// ===== build connector =====
-function buildConnector(){
-    connectorWrap.innerHTML="";
-    pinElements={};
+// ===== build round connector =====
+function buildRound(){
+    roundWrap.innerHTML="";pinEls={};
     const el=document.createElement("div");
     el.className="connector-round"+(isFront?" front-view":"")+(isTracking?" tracking-mode":"")+(showIds?" show-ids":"");
-    el.id="connector";
-    el.style.width=SIZE+"px"; el.style.height=SIZE+"px";
-
+    el.id="roundConn";el.style.width=SIZE+"px";el.style.height=SIZE+"px";
     const k1=document.createElement("div");k1.className="keyway k1";el.appendChild(k1);
     const k2=document.createElement("div");k2.className="keyway k2";el.appendChild(k2);
-
-    const cx=SIZE/2, cy=SIZE/2;
+    const cx=SIZE/2,cy=SIZE/2;
     LETTER_ORDER.forEach(L=>{
         const d=PINS[L];
-        const px=cx + d.x*INSERT_R;
-        const py=cy + d.y*INSERT_R;
+        const px=cx+d.x*INSERT_R, py=cy+d.y*INSERT_R;
         const used=isUsed(L);
-
         const pin=document.createElement("div");
         pin.className="pin"+(used?"":" empty");
-        if(used && PINS[L].sharedP78) pin.classList.add("shared");
-        pin.style.left=px+"px"; pin.style.top=py+"px";
-
+        pin.style.left=px+"px";pin.style.top=py+"px";
         const outer=document.createElement("div");outer.className="outer";
         const inner=document.createElement("div");inner.className="inner";
-
         if(used){
-            const bg=resolveColor(d.color);
-            outer.style.background=bg;
-            inner.style.background=bg;
-            inner.style.color=textColorFor(bg);
-            const nm=document.createElement("div");nm.className="nm";nm.textContent=d.name;
-            const idl=document.createElement("div");idl.className="idlbl";
-            idl.innerHTML='<span class="L">'+L+'</span><span class="p78">78:'+d.p78+'</span>';
-            inner.appendChild(nm); inner.appendChild(idl);
-        } else {
-            inner.textContent="";
-        }
-
-        const letter=document.createElement("div");letter.className="hole-letter";letter.textContent=L;
-
-        pin.appendChild(outer); pin.appendChild(inner); pin.appendChild(letter);
-
-        // tooltip
-        if(used){
-            const extra = d.sharedP78 ? " | "+d.note : "";
-            pin.title="Hole "+L+"  |  "+d.signal+(d.ref?" ("+d.ref+")":"")+"  |  78-pin "+d.p78+"  |  "+d.color+"  |  "+d.cable+extra;
-        } else {
-            pin.title="Hole "+L+" — unused on this cable";
-        }
-
+            const bg=pinColor(L);
+            outer.style.background=bg;inner.style.background=bg;inner.style.color=textColorFor(bg);
+            inner.innerHTML='<span class="nm">'+d.name+'</span>';
+            pin.title="Hole "+L+"  |  "+d.name+"  |  78-pin "+d.p78+"  |  "+d.signal+"  |  "+(d.oc||"")+"  |  "+d.ctype;
+        } else { pin.title="Hole "+L+" — unused on this cable"; }
         if(doneState[L]) pin.classList.add("done");
-
-        if(used){
-            pin.addEventListener("click",()=>{
-                if(isTracking){
-                    doneState[L]=!doneState[L];
-                    lsSet(KEY_DONE,doneState);
-                    pin.classList.toggle("done",doneState[L]);
-                    updateProgress(); filterPins();
-                }
-            });
-        }
-
-        el.appendChild(pin);
-        pinElements[L]=pin;
+        const letter=document.createElement("div");letter.className="hole-letter";letter.textContent=L;
+        pin.appendChild(outer);pin.appendChild(inner);pin.appendChild(letter);
+        if(used) pin.addEventListener("click",()=>onPinClick(L));
+        el.appendChild(pin);pinEls[L]=pin;
     });
-    connectorWrap.appendChild(el);
-    applyEmpty();
+    roundWrap.appendChild(el);roundEl=el;
+    applyEmpty();refreshRoundLabels();
+}
+
+function refreshRoundLabels(){
+    LETTER_ORDER.filter(isUsed).forEach(L=>{
+        const d=PINS[L];const inner=pinEls[L].querySelector(".inner");
+        inner.innerHTML = showIds
+            ? '<span style="color:#ffd86b;font-size:12px">'+L+'</span><br><span style="color:#9fe8c0;font-size:8px">78:'+d.p78+'</span>'
+            : '<span class="nm">'+d.name+'</span>';
+    });
+}
+
+// ===== build D-Sub 78 (other end) =====
+function buildDsub(){
+    dsubWrap.innerHTML="";dsubEls={};
+    const el=document.createElement("div");
+    el.className="connector-dsub"+(isFront?" front-view":"")+(isTracking?" tracking-mode":"");
+    el.id="dsubConn";
+    let n=1;
+    DSUB_ROWS.forEach((cnt,idx)=>{
+        const row=document.createElement("div");
+        row.className="row"+(idx%2?" offset":"");
+        for(let i=0;i<cnt;i++){
+            const num=n;
+            const L=P78_TO_LETTER[num];
+            const pin=document.createElement("div");pin.className="pin"+(L?"":" empty");
+            const outer=document.createElement("div");outer.className="outer";
+            const inner=document.createElement("div");inner.className="inner";
+            if(L){
+                const d=PINS[L];const bg=resolveColor(d.oc||d.ic||"");
+                outer.style.background=bg;inner.style.background=bg;inner.style.color=textColorFor(bg);
+                inner.textContent=d.name;
+                pin.title="78-pin "+num+"  |  "+d.name+"  |  55-round "+L+"  |  "+d.signal;
+                if(doneState[L]) pin.classList.add("done");
+                pin.addEventListener("click",()=>onPinClick(L));
+            } else { pin.title="78-pin "+num+" — not used"; }
+            const lab=document.createElement("div");lab.className="hole-letter";lab.textContent=num;
+            pin.appendChild(outer);pin.appendChild(inner);pin.appendChild(lab);
+            row.appendChild(pin);dsubEls[num]=pin;n++;
+        }
+        el.appendChild(row);
+    });
+    dsubWrap.appendChild(el);dsubEl=el;
+}
+
+// ===== clicking a wire (either end) =====
+function onPinClick(L){
+    if(isTracking){
+        doneState[L]=!doneState[L];lsSet(KEY_DONE,doneState);
+        if(pinEls[L]) pinEls[L].classList.toggle("done",doneState[L]);
+        const p78=PINS[L].p78; if(dsubEls[p78]) dsubEls[p78].classList.toggle("done",doneState[L]);
+        updateProgress();filterPins();
+        if(isGuiding){ guideIdx=-1; updateGuide(); }
+        return;
+    }
+    crossLink(L);
+}
+let linkedLetter=null;
+function crossLink(L){
+    // clear
+    document.querySelectorAll(".pin.linked").forEach(e=>e.classList.remove("linked"));
+    document.querySelectorAll("#mapBody tr.row-hi").forEach(tr=>tr.classList.remove("row-hi"));
+    if(linkedLetter===L){ linkedLetter=null; return; } // toggle off
+    linkedLetter=L;
+    if(pinEls[L]) pinEls[L].classList.add("linked");
+    const p78=PINS[L].p78;
+    if(dsubEls[p78]) dsubEls[p78].classList.add("linked");
+    const tr=document.getElementById("row-"+L); if(tr){ tr.classList.add("row-hi"); tr.scrollIntoView({block:"nearest",behavior:"smooth"}); }
+    const d=PINS[L];
+    statsBar.innerHTML="Wire <span>"+d.name+"</span>: 78-pin <span>"+p78+"</span> &rarr; 55-round <span>"+L+"</span> &middot; "+d.signal;
 }
 
 function applyEmpty(){
-    LETTER_ORDER.forEach(L=>{
-        if(!isUsed(L) && pinElements[L]) pinElements[L].style.display = showEmpty?"":"none";
-    });
+    LETTER_ORDER.forEach(L=>{ if(!isUsed(L)&&pinEls[L]) pinEls[L].style.display=showEmpty?"":"none"; });
 }
 
 // ===== toggles =====
 function toggleView(){
     isFront=!isFront;
-    const el=document.getElementById("connector");
-    el.classList.toggle("front-view",isFront);
+    if(roundEl) roundEl.classList.toggle("front-view",isFront);
+    if(dsubEl) dsubEl.classList.toggle("front-view",isFront);
     viewBadge.textContent=isFront?"FRONT / MATING VIEW":"REAR / SOLDER VIEW";
 }
-function toggleIds(){
-    showIds=document.getElementById("showIds").checked;
-    document.getElementById("connector").classList.toggle("show-ids",showIds);
-}
-function toggleEmpty(){
-    showEmpty=document.getElementById("showEmpty").checked;
-    applyEmpty();
+function toggleIds(){ showIds=document.getElementById("showIds").checked; refreshRoundLabels(); }
+function toggleEmpty(){ showEmpty=document.getElementById("showEmpty").checked; applyEmpty(); }
+function toggleOther(){
+    showOther=document.getElementById("showOther").checked;
+    otherCol.style.display=showOther?"":"none";
+    if(showOther && !dsubEl) buildDsub();
 }
 function toggleTrackingMode(){
     isTracking=document.getElementById("trackingMode").checked;
-    document.getElementById("connector").classList.toggle("tracking-mode",isTracking);
+    if(roundEl) roundEl.classList.toggle("tracking-mode",isTracking);
+    if(dsubEl) dsubEl.classList.toggle("tracking-mode",isTracking);
     trackingGroup.classList.toggle("tracking-active",isTracking);
     progressWrap.classList.toggle("visible",isTracking);
     if(isTracking) updateProgress();
     filterPins();
+    if(isGuiding) updateGuide();
 }
 
-// ===== dropdown =====
+// ===== Guide Mode (center -> out) =====
+function toggleGuideMode(){
+    isGuiding=document.getElementById("guideMode").checked;
+    guideGroup.classList.toggle("guide-active",isGuiding);
+    guideIdx=-1;
+    updateGuide();
+}
+function getGuideList(){
+    const val=cableFilter.value;
+    let allow=null;
+    if(val!=="ALL") allow=new Set(LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===val));
+    return GUIDE_ORDER.filter(L=>!allow||allow.has(L));
+}
+function getNextGuide(){
+    const list=getGuideList();
+    if(guideIdx>=0) return guideIdx<list.length?list[guideIdx]:null;
+    for(const L of list){ if(!doneState[L]) return L; }
+    return null;
+}
+function navGuide(dir){
+    const list=getGuideList();if(!list.length) return;
+    const cur=getNextGuide();let pos=cur?list.indexOf(cur):-1;
+    let nx=pos+dir;
+    while(nx>=0&&nx<list.length&&doneState[list[nx]]) nx+=dir;
+    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); }
+}
+function ringName(L){
+    const r=Math.hypot(PINS[L].x,PINS[L].y);
+    if(r<0.25) return "inner ring";
+    if(r<0.62) return "middle ring";
+    return "outer ring";
+}
+function updateGuide(){
+    document.querySelectorAll(".pin.guide-next").forEach(e=>e.classList.remove("guide-next"));
+    if(!isGuiding){ guideInfo.style.display="none"; return; }
+    const L=getNextGuide();
+    guideInfo.style.display="block";
+    if(L===null){ guideInfo.innerHTML="All contacts done!"; return; }
+    if(pinEls[L]) pinEls[L].classList.add("guide-next");
+    const d=PINS[L];
+    const list=getGuideList();const undone=list.filter(x=>!doneState[x]);
+    const pos=undone.indexOf(L)+1;
+    guideInfo.innerHTML='Solder next &rarr; <span style="color:#f0c030;font-size:1.1rem;">Hole '+L+'</span> ('+ringName(L)+') &middot; '+d.name+' &middot; 78-pin '+d.p78+' &middot; '+d.signal+' <span style="color:#6a8ab0;">['+pos+'/'+undone.length+' left]</span> <span style="color:#4a6a88;font-size:0.75rem;">[ &larr; &rarr; navigate ]</span>';
+}
+document.addEventListener("keydown",e=>{
+    if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) return;
+    if(isGuiding){
+        if(e.key==="ArrowRight"){e.preventDefault();navGuide(1);}
+        else if(e.key==="ArrowLeft"){e.preventDefault();navGuide(-1);}
+    } else {
+        if(e.key==="ArrowLeft"){e.preventDefault();navCable(-1);}
+        if(e.key==="ArrowRight"){e.preventDefault();navCable(1);}
+    }
+});
+
+// ===== dropdown / filter =====
 function buildDropdown(){
     cableFilter.innerHTML="";
     const used=LETTER_ORDER.filter(isUsed).length;
     const all=document.createElement("option");all.value="ALL";
-    all.textContent="All cables ("+used+" wired contacts)";
-    cableFilter.appendChild(all);
+    all.textContent="All cables ("+used+" wired contacts)";cableFilter.appendChild(all);
     CABLE_ORDER.forEach(c=>{
-        const n=LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===c).length;
-        if(!n) return;
+        const n=LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===c).length;if(!n) return;
         const o=document.createElement("option");o.value=c;
-        o.textContent="    "+c+" — "+CABLE_DESC[c]+" ("+n+" contacts)";
-        cableFilter.appendChild(o);
+        o.textContent="    "+c+" ("+n+" contacts)";cableFilter.appendChild(o);
     });
 }
 function navCable(dir){
-    const opts=cableFilter.options;
-    let idx=cableFilter.selectedIndex+dir;
+    const opts=cableFilter.options;let idx=cableFilter.selectedIndex+dir;
     if(idx>=0&&idx<opts.length){cableFilter.selectedIndex=idx;filterPins();}
 }
-
-// ===== filter =====
 function filterPins(){
     const val=cableFilter.value;
     bottomCableLabel.textContent=cableFilter.options[cableFilter.selectedIndex].textContent.trim();
     let active=null;
     if(val!=="ALL") active=new Set(LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===val));
-
     let shown=0;
     LETTER_ORDER.forEach(L=>{
-        const el=pinElements[L]; if(!el) return;
-        if(!isUsed(L)){ el.classList.remove("highlighted"); return; }
-        if(active===null){ el.classList.remove("dimmed","highlighted"); shown++; }
-        else if(active.has(L)){ el.classList.remove("dimmed"); el.classList.add("highlighted"); shown++; }
-        else { el.classList.add("dimmed"); el.classList.remove("highlighted"); }
+        const el=pinEls[L];if(!el) return;
+        if(!isUsed(L)){el.classList.remove("highlighted");return;}
+        if(active===null){el.classList.remove("dimmed","highlighted");shown++;}
+        else if(active.has(L)){el.classList.remove("dimmed");el.classList.add("highlighted");shown++;}
+        else{el.classList.add("dimmed");el.classList.remove("highlighted");}
+        // mirror onto dsub
+        const dp=dsubEls[PINS[L].p78];
+        if(dp){ if(active&&!active.has(L)) dp.classList.add("dimmed"); else dp.classList.remove("dimmed"); }
     });
-
     if(active===null){
         const tot=LETTER_ORDER.filter(isUsed).length;
         const doneN=LETTER_ORDER.filter(L=>isUsed(L)&&doneState[L]).length;
         statsBar.innerHTML="Wired contacts: <span>"+tot+"</span> of 55"+(isTracking?" &mdash; <span style='color:#2ecc71'>"+doneN+" done</span>":"");
         cableLegend.classList.remove("visible");
     } else {
-        const letters=LETTER_ORDER.filter(L=>active.has(L));
-        const list=letters.map(L=>L+"→"+PINS[L].p78).join(", ");
-        const doneN=letters.filter(L=>doneState[L]).length;
-        statsBar.innerHTML="Showing <span>"+shown+"</span> contacts ("+val+"): "+list+(isTracking?" &mdash; <span style='color:#2ecc71'>"+doneN+"/"+shown+" done</span>":"");
+        const letters=LETTER_ORDER.filter(L=>active.has(L)).sort((a,b)=>PINS[a].p78-PINS[b].p78);
+        statsBar.innerHTML="Showing <span>"+shown+"</span> ("+val+"): "+letters.map(L=>"78:"+PINS[L].p78+"&rarr;"+L).join(", ");
         buildLegend(letters);
     }
     updateNotes(val);
-    highlightTable(active);
+    if(isGuiding){ guideIdx=-1; updateGuide(); }
 }
-
 function buildLegend(letters){
     cableLegend.innerHTML="";
     letters.forEach(L=>{
-        const d=PINS[L];
-        const c=resolveColor(d.color);
+        const d=PINS[L];const c=pinColor(L);
         const item=document.createElement("span");
         item.className="legend-item"+(isTracking&&doneState[L]?" is-done":"");
-        item.innerHTML='<span class="legend-dot" style="background:'+c+'"></span>'+L+' &rarr; 78-pin '+d.p78+' &middot; '+d.name+' ('+d.color+')'+(isTracking&&doneState[L]?" ✓":"");
+        item.innerHTML='<span class="legend-dot" style="background:'+c+'"></span>'+L+' &larr; 78-pin '+d.p78+' &middot; '+d.name;
+        item.onclick=()=>crossLink(L);
         cableLegend.appendChild(item);
     });
     cableLegend.classList.add("visible");
 }
-
 function updateNotes(val){
-    notesContent.innerHTML="";
-    let has=false;
-    LETTER_ORDER.forEach(L=>{
+    notesContent.innerHTML="";let has=false;
+    // shields grouped
+    const shields=LETTER_ORDER.filter(L=>isUsed(L)&&/SHEILD|SHIELD/i.test(PINS[L].signal));
+    shields.forEach(L=>{
         const d=PINS[L];
-        if(!isUsed(L)||!d.note) return;
-        if(val!=="ALL" && d.cable!==val) return;
+        if(val!=="ALL"&&d.cable!==val) return;
         has=true;
-        const item=document.createElement("div");item.className="note-item";
-        item.innerHTML='<span class="note-pin">'+L+'</span><span class="note-name">'+d.signal+'</span><span class="note-desc">'+d.note+'</span>';
+        const item=document.createElement("div");
+        item.style.cssText="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-family:'JetBrains Mono',monospace;font-size:0.75rem;";
+        item.innerHTML='<span style="color:#ffd86b;font-weight:700;min-width:40px">'+L+'</span><span style="color:#8ac4f0;min-width:70px">'+d.name+'</span><span style="color:#d0dce8">'+d.signal+' &middot; from 78-pin '+d.p78+' &middot; '+d.cable+' shield</span>';
         notesContent.appendChild(item);
     });
     notesPanel.classList.toggle("visible",has);
@@ -525,41 +643,29 @@ function updateProgress(){
 }
 function resetAllDone(){
     if(!confirm("Reset all tracking?")) return;
-    doneState={}; lsSet(KEY_DONE,doneState);
-    LETTER_ORDER.forEach(L=>{ if(pinElements[L]) pinElements[L].classList.remove("done"); });
-    updateProgress(); filterPins();
+    doneState={};lsSet(KEY_DONE,doneState);
+    document.querySelectorAll(".pin.done").forEach(e=>e.classList.remove("done"));
+    updateProgress();filterPins();if(isGuiding){guideIdx=-1;updateGuide();}
 }
 
-// ===== mapping table =====
+// ===== mapping table (sorted by 78-pin) =====
 function buildTable(){
-    const tb=document.getElementById("mapBody");
-    tb.innerHTML="";
-    LETTER_ORDER.filter(isUsed).sort((a,b)=>{
-        const ca=CABLE_ORDER.indexOf(PINS[a].cable), cb=CABLE_ORDER.indexOf(PINS[b].cable);
-        return ca-cb || PINS[a].p78-PINS[b].p78;
-    }).forEach(L=>{
-        const d=PINS[L];
-        const tr=document.createElement("tr");tr.id="row-"+L;
-        tr.innerHTML="<td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+d.signal+(d.sharedP78?" <span style='color:#ffd86b'>⚡</span>":"")+"</td><td>"+(d.ref||"")+"</td><td style='color:#9fe8c0'>"+d.p78+"</td><td>"+d.color+"</td><td>"+d.cable+"</td><td>"+d.desc+"</td>";
+    const tb=document.getElementById("mapBody");tb.innerHTML="";
+    LETTER_ORDER.filter(isUsed).sort((a,b)=>PINS[a].p78-PINS[b].p78).forEach(L=>{
+        const d=PINS[L];const tr=document.createElement("tr");tr.id="row-"+L;
+        tr.innerHTML="<td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
+        tr.onclick=()=>crossLink(L);
         tb.appendChild(tr);
     });
 }
-function highlightTable(active){
-    document.querySelectorAll("#mapBody tr").forEach(tr=>tr.classList.remove("row-hi"));
-    if(active) active.forEach(L=>{ const tr=document.getElementById("row-"+L); if(tr) tr.classList.add("row-hi"); });
-}
 
-// ===== CSV download =====
+// ===== CSV download — matches "55round - Sheet3.csv" format =====
 function downloadCSV(){
-    const lines=["pin55,letter,name,signal,ref,p78,color,cable,cable_type,note"];
-    LETTER_ORDER.forEach(L=>{
+    const lines=["pin 78,pin 55round,name,outer_color,inner_color,cable_type,description"];
+    LETTER_ORDER.filter(isUsed).sort((a,b)=>PINS[a].p78-PINS[b].p78).forEach(L=>{
         const d=PINS[L];
-        if(isUsed(L)){
-            const note=d.note?d.note.replace(/,/g,";"):"";
-            lines.push([L,L,d.name,d.signal,d.ref,d.p78,d.color,d.cable,d.desc,note].join(","));
-        } else {
-            lines.push([L,L,"NC","","","","","","",""].join(","));
-        }
+        const esc=s=>(s||"").replace(/,/g,";");
+        lines.push([d.p78,L,esc(d.name),esc(d.oc),esc(d.ic),esc(d.ctype),esc(d.signal)].join(","));
     });
     const blob=new Blob([lines.join("\n")],{type:"text/csv"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);
@@ -569,11 +675,7 @@ function downloadCSV(){
 // ===== init =====
 function init(){
     doneState=lsGet(KEY_DONE)||{};
-    buildDropdown();
-    buildConnector();
-    buildTable();
-    updateProgress();
-    filterPins();
+    buildDropdown();buildRound();buildTable();updateProgress();filterPins();
     bottomCableLabel.textContent=cableFilter.options[cableFilter.selectedIndex].textContent.trim();
 }
 init();

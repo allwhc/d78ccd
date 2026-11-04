@@ -1,0 +1,31 @@
+pin 78,pin 55round,name,outer_color,inner_color,cable_type,description
+6,HH,C4-1,Green,Green,5 CORE CABLE,B_BIAS-1
+8,z,C4-3,brown,brown,5 CORE CABLE,U_BIAS-5
+10,m,C5-S,shield,shield,5 CORE CABLE,SHEILD-5
+12,N,C6-3,brown,brown,5 CORE CABLE,Heater-1
+13,R,C6-1,Green,Green,5 CORE CABLE,DIODE SENSE
+14,P,C6-2,yellow,yellow,5 CORE CABLE,CATHHODE
+15,p,C3-S,shield,shield,2 CORE CABLE,SHEILD-3
+19,V,C5-5,grey,grey,5 CORE CABLE,REGISTOR Clock-8
+21,u,C7-S,shield,shield,Coaxial cable,SHEILD
+22,f,C8-S,shield,shield,Coaxial cable,SHEILD
+26,CC,C4-2,yellow,yellow,5 CORE CABLE,B_BIAS-2
+32,i,C6-4,white,white,5 CORE CABLE,Heater-2
+38,E,C5-4,white,white,5 CORE CABLE,REGISTOR Clock-7
+47,GG,C4-4,white,white,5 CORE CABLE,U_BIAS-7
+54,k,C1-S,shield,shield,2 CORE CABLE,SHEILD-1
+55,T,C5-1,Green,Green,5 CORE CABLE,REGISTOR Clock-4
+56,C,C3-1,Red,red,2 CORE CABLE,IMAGE Clock-3
+57,Z,C5-2,yellow,yellow,5 CORE CABLE,REGISTOR Clock-5
+58,S,C1-1,Red,red,2 CORE CABLE,IMAGE Clock-1
+59,U,C5-3,brown,brown,5 CORE CABLE,REGISTOR Clock-6
+60,d,C7-1,Signal,Signal,Coaxial cable,VIDEO Input-1
+61,g,C8-1,Signal,Signal,Coaxial cable,VIDEO Input-2
+64,n,C6-S,shield,shield,5 CORE CABLE,SHEILD-6
+67,BB,C4-5,grey,grey,5 CORE CABLE,U_BIAS-8
+69,W,C4-S,shield,shield,5 CORE CABLE,SHEILD-4
+73,Y,C2-S,shield,shield,2 CORE CABLE,SHEILD-2
+74,b,C3-2,blue,blue,2 CORE CABLE,REGISTOR Clock-3
+76,D,C1-2,blue,blue,2 CORE CABLE,REGISTOR Clock-1
+77,B,C2-1,Red,red,2 CORE CABLE,IMAGE Clock-2
+78,A,C2-2,blue,blue,2 CORE CABLE,REGISTOR Clock-2
