@@ -199,6 +199,12 @@ table.map td{color:#c4d6ea;}
 table.map tr{cursor:pointer;}
 table.map tr:nth-child(even) td{background:rgba(18,37,62,0.4);}
 table.map tr.row-hi td{background:rgba(255,59,107,0.22)!important;}
+table.map td.qpos{color:#8ac4f0;font-weight:700;text-align:center;min-width:28px;}
+table.map tr.q-next td{background:rgba(240,192,48,0.22)!important;box-shadow:inset 3px 0 0 #f0c030;}
+table.map tr.q-next td.qpos{color:#f0c030;}
+table.map tr.q-done td{opacity:0.5;}
+table.map tr.q-done td:nth-child(n+3){text-decoration:line-through;text-decoration-color:#2a8a4a;}
+table.map tr.q-done td.qpos{color:#2ecc71;}
 
 @media print{
     body{background:#fff;color:#1a1a1a;}
@@ -249,6 +255,10 @@ table.map tr.row-hi td{background:rgba(255,59,107,0.22)!important;}
     <div class="checkbox-group" id="guideGroup">
         <input type="checkbox" id="guideMode" onchange="toggleGuideMode()">
         <label for="guideMode">Guide Mode (center&rarr;out)</label>
+    </div>
+    <div class="checkbox-group" id="queueGroup">
+        <input type="checkbox" id="queueOrder" onchange="toggleQueueOrder()">
+        <label for="queueOrder">Center-out queue (table)</label>
     </div>
     <div class="checkbox-group" id="trackingGroup">
         <input type="checkbox" id="trackingMode" onchange="toggleTrackingMode()">
@@ -302,7 +312,7 @@ table.map tr.row-hi td{background:rgba(255,59,107,0.22)!important;}
 <div class="map-table-wrap">
     <table class="map" id="mapTable">
         <thead><tr>
-            <th>78-pin</th><th>55-round</th><th>Name</th><th>Colour</th><th>Cable type</th><th>Description</th>
+            <th id="qposHead" style="display:none;">#</th><th>78-pin</th><th>55-round</th><th>Name</th><th>Colour</th><th>Cable type</th><th>Description</th>
         </tr></thead>
         <tbody id="mapBody"></tbody>
     </table>
@@ -353,12 +363,13 @@ const progressBar=document.getElementById("progressBar");
 const progressText=document.getElementById("progressText");
 const trackingGroup=document.getElementById("trackingGroup");
 const guideGroup=document.getElementById("guideGroup");
+const queueGroup=document.getElementById("queueGroup");
 const notesPanel=document.getElementById("notesPanel");
 const notesContent=document.getElementById("notesContent");
 const bottomCableLabel=document.getElementById("bottomCableLabel");
 const guideInfo=document.getElementById("guideInfo");
 
-let isFront=false, isTracking=false, showIds=false, showEmpty=true, showOther=false, isGuiding=false;
+let isFront=false, isTracking=false, showIds=false, showEmpty=true, showOther=false, isGuiding=false, queueOrder=false;
 let roundEl=null, dsubEl=null;
 let pinEls={};      // letter -> round pin element
 let dsubEls={};     // 78pin number -> dsub pin element
@@ -455,6 +466,7 @@ function onPinClick(L){
         const p78=PINS[L].p78; if(dsubEls[p78]) dsubEls[p78].classList.toggle("done",doneState[L]);
         updateProgress();filterPins();
         if(isGuiding){ guideIdx=-1; updateGuide(); }
+        if(queueOrder) buildTable();
         return;
     }
     crossLink(L);
@@ -508,7 +520,13 @@ function toggleGuideMode(){
     isGuiding=document.getElementById("guideMode").checked;
     guideGroup.classList.toggle("guide-active",isGuiding);
     guideIdx=-1;
+    if(!isGuiding && queueOrder){
+        // guide off -> queue has no meaning; turn it off too
+        queueOrder=false; document.getElementById("queueOrder").checked=false;
+        queueGroup.classList.remove("guide-active");
+    }
     updateGuide();
+    buildTable();
 }
 function getGuideList(){
     const val=cableFilter.value;
@@ -527,7 +545,7 @@ function navGuide(dir){
     const cur=getNextGuide();let pos=cur?list.indexOf(cur):-1;
     let nx=pos+dir;
     while(nx>=0&&nx<list.length&&doneState[list[nx]]) nx+=dir;
-    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); }
+    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); if(queueOrder) buildTable(); }
 }
 function ringName(L){
     const r=Math.hypot(PINS[L].x,PINS[L].y);
@@ -601,7 +619,7 @@ function filterPins(){
         buildLegend(letters);
     }
     updateNotes(val);
-    if(isGuiding){ guideIdx=-1; updateGuide(); }
+    if(isGuiding){ guideIdx=-1; updateGuide(); if(queueOrder) buildTable(); }
 }
 function buildLegend(letters){
     cableLegend.innerHTML="";
@@ -648,15 +666,61 @@ function resetAllDone(){
     updateProgress();filterPins();if(isGuiding){guideIdx=-1;updateGuide();}
 }
 
-// ===== mapping table (sorted by 78-pin) =====
+// ===== mapping table =====
+// Default: sorted by 78-pin.  Queue order (when "Center-out queue" on & Guide Mode on):
+// rows follow the GUIDE_ORDER (inner-most hole first -> outer), pending pins first with
+// the current "next" pin at the very top, done pins greyed at the bottom.
+function orderedTableLetters(){
+    const used=LETTER_ORDER.filter(isUsed);
+    if(!(queueOrder && isGuiding)){
+        return used.slice().sort((a,b)=>PINS[a].p78-PINS[b].p78);
+    }
+    // center-out solder queue over ALL 30 wired contacts (ignores cable filter, by request)
+    const inGuide=GUIDE_ORDER.filter(isUsed);
+    const next=getNextGuide();
+    const pending=inGuide.filter(L=>!doneState[L]);
+    const done=inGuide.filter(L=>doneState[L]);
+    // rotate pending so the current "next" pin leads
+    if(next){
+        const i=pending.indexOf(next);
+        if(i>0) pending.push(...pending.splice(0,i));
+    }
+    return pending.concat(done);
+}
 function buildTable(){
     const tb=document.getElementById("mapBody");tb.innerHTML="";
-    LETTER_ORDER.filter(isUsed).sort((a,b)=>PINS[a].p78-PINS[b].p78).forEach(L=>{
+    const queue = queueOrder && isGuiding;
+    const letters=orderedTableLetters();
+    const next=queue?getNextGuide():null;
+    let seq=1;
+    letters.forEach(L=>{
         const d=PINS[L];const tr=document.createElement("tr");tr.id="row-"+L;
-        tr.innerHTML="<td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
+        const isDone=!!doneState[L];
+        if(queue && isDone) tr.classList.add("q-done");
+        if(queue && L===next) tr.classList.add("q-next");
+        const posCell = queue
+            ? "<td class='qpos'>"+(isDone?"&#10003;":(seq++))+"</td>"
+            : "";
+        tr.innerHTML=posCell+"<td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
         tr.onclick=()=>crossLink(L);
         tb.appendChild(tr);
     });
+    // show/hide the "#" header column
+    const qh=document.getElementById("qposHead");
+    if(qh) qh.style.display = queue ? "" : "none";
+    if(queue && next){
+        const tr=document.getElementById("row-"+next);
+        if(tr) tr.scrollIntoView({block:"nearest"});
+    }
+}
+function toggleQueueOrder(){
+    queueOrder=document.getElementById("queueOrder").checked;
+    queueGroup.classList.toggle("guide-active",queueOrder);
+    if(queueOrder && !isGuiding){
+        // queue only makes sense with Guide Mode; turn it on
+        document.getElementById("guideMode").checked=true; toggleGuideMode();
+    }
+    buildTable();
 }
 
 // ===== CSV download — matches "55round - Sheet3.csv" format =====
