@@ -228,8 +228,58 @@ table.map tr.q-done td.qpos{color:#2ecc71;}
 body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16px rgba(240,192,48,0.35);}
 @media (max-width:820px){ .float-nav{width:48px;height:72px;} .float-nav .fn-arrow{font-size:1.3rem;} }
 
+/* Floating options tab + slide-out panel (right side) */
+.opt-tab{
+    position:fixed;right:0;top:34%;z-index:60;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:12px 7px;border-radius:12px 0 0 12px;
+    background:rgba(26,58,106,0.92);border:1px solid #3a7bd5;border-right:none;
+    color:#cfe3ff;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,0.45);
+    writing-mode:vertical-rl;text-orientation:mixed;
+    font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;letter-spacing:1px;
+    transition:all 0.15s;backdrop-filter:blur(3px);
+}
+.opt-tab:hover{background:#1a4a8a;color:#fff;}
+.opt-tab .ot-gear{writing-mode:horizontal-tb;font-size:1.1rem;}
+.opt-panel{
+    position:fixed;right:-320px;top:0;height:100%;width:300px;z-index:61;
+    background:rgba(12,25,45,0.97);border-left:1px solid #2a4a6e;
+    box-shadow:-6px 0 28px rgba(0,0,0,0.5);backdrop-filter:blur(5px);
+    padding:16px 16px 24px;overflow-y:auto;transition:right 0.25s ease;
+    display:flex;flex-direction:column;gap:4px;
+}
+.opt-panel.open{right:0;}
+.opt-panel-head{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:#c8daf0;
+    padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid #1e3c5c;
+}
+.opt-close{cursor:pointer;font-size:1.4rem;color:#6a8ab0;line-height:1;}
+.opt-close:hover{color:#fff;}
+.opt-row{
+    display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    font-family:'Outfit',sans-serif;font-size:0.84rem;font-weight:600;color:#a0c4e8;
+    padding:8px 6px;border-radius:7px;transition:background 0.15s;
+}
+.opt-row:hover{background:rgba(58,123,213,0.12);}
+.opt-row input[type="checkbox"]{
+    appearance:none;width:16px;height:16px;border:2px solid #2a4a6e;border-radius:4px;
+    background:#12253e;cursor:pointer;position:relative;flex-shrink:0;
+}
+.opt-row input[type="checkbox"]:checked{background:#1976d2;border-color:#3a7bd5;}
+.opt-row input[type="checkbox"]:checked::after{content:'\2713';position:absolute;top:-2px;left:2px;font-size:12px;color:#fff;font-weight:bold;}
+.opt-sep{height:1px;background:#1e3c5c;margin:8px 0;}
+.opt-btn{
+    width:100%;text-align:left;padding:9px 12px;margin:2px 0;
+    font-family:'Outfit',sans-serif;font-weight:600;font-size:0.84rem;
+    background:#12253e;border:1px solid #2a4a6e;color:#a0c4e8;border-radius:7px;cursor:pointer;
+}
+.opt-btn:hover{background:#1a3556;border-color:#3a7bd5;color:#fff;}
+.opt-btn-danger{border-color:#6e2a2a;color:#e8a0a0;background:#2e1218;}
+.opt-btn-danger:hover{background:#4a1a22;border-color:#d53a3a;color:#fff;}
+
 @media print{
-    .float-nav{display:none!important;}
+    .float-nav,.opt-tab,.opt-panel{display:none!important;}
     body{background:#fff;color:#1a1a1a;}
     nav,.toolbar,.toolbar-row,.stats-bar,.progress-wrap,.sub,#guideInfo{display:none!important;}
     .connector-round,.connector-dsub{background:#fff;border-color:#333;box-shadow:none;}
@@ -315,6 +365,27 @@ body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16p
 <button id="floatNext" class="float-nav float-right" onclick="navCable(1)" title="Next (pin in Guide mode)">
     <span class="fn-arrow">&#9654;</span><span class="fn-label">NEXT</span>
 </button>
+
+<!-- Floating options tab (right side) -->
+<div id="optTab" class="opt-tab" onclick="toggleOptPanel()" title="Options">
+    <span class="ot-gear">&#9881;</span><span class="ot-txt">OPTIONS</span>
+</div>
+<div id="optPanel" class="opt-panel">
+    <div class="opt-panel-head">
+        <span>&#9881; Options</span>
+        <span class="opt-close" onclick="toggleOptPanel()">&times;</span>
+    </div>
+    <label class="opt-row"><input type="checkbox" id="m_showIds"    onchange="mirror('showIds')">      Pin Numbers (letter + 78-pin)</label>
+    <label class="opt-row"><input type="checkbox" id="m_guideMode"  onchange="mirror('guideMode')">    Guide Mode (center&rarr;out)</label>
+    <label class="opt-row"><input type="checkbox" id="m_queueOrder" onchange="mirror('queueOrder')">   Center-out queue (table)</label>
+    <label class="opt-row"><input type="checkbox" id="m_trackingMode" onchange="mirror('trackingMode')"> Pin Tracking</label>
+    <label class="opt-row"><input type="checkbox" id="m_showEmpty"  onchange="mirror('showEmpty')">    Show Unused Holes</label>
+    <label class="opt-row"><input type="checkbox" id="m_showOther"  onchange="mirror('showOther')">    Show 78-pin (other end)</label>
+    <div class="opt-sep"></div>
+    <button class="opt-btn" onclick="toggleView()">&#128260; Front / Rear</button>
+    <button class="opt-btn" onclick="downloadCSV()">&#128229; Download CSV</button>
+    <button class="opt-btn opt-btn-danger" onclick="resetAllDone()">&#10226; Reset Tracking</button>
+</div>
 
 <div class="stage">
     <div class="stage-col">
@@ -528,12 +599,13 @@ function toggleView(){
     if(dsubEl) dsubEl.classList.toggle("front-view",isFront);
     viewBadge.textContent=isFront?"FRONT / MATING VIEW":"REAR / SOLDER VIEW";
 }
-function toggleIds(){ showIds=document.getElementById("showIds").checked; refreshRoundLabels(); }
-function toggleEmpty(){ showEmpty=document.getElementById("showEmpty").checked; applyEmpty(); }
+function toggleIds(){ showIds=document.getElementById("showIds").checked; refreshRoundLabels(); if(typeof syncOptPanel==="function") syncOptPanel(); }
+function toggleEmpty(){ showEmpty=document.getElementById("showEmpty").checked; applyEmpty(); if(typeof syncOptPanel==="function") syncOptPanel(); }
 function toggleOther(){
     showOther=document.getElementById("showOther").checked;
     otherCol.style.display=showOther?"":"none";
     if(showOther && !dsubEl) buildDsub();
+    if(typeof syncOptPanel==="function") syncOptPanel();
 }
 function toggleTrackingMode(){
     isTracking=document.getElementById("trackingMode").checked;
@@ -544,6 +616,7 @@ function toggleTrackingMode(){
     if(isTracking) updateProgress();
     filterPins();
     if(isGuiding) updateGuide();
+    if(typeof syncOptPanel==="function") syncOptPanel();
 }
 
 // ===== Guide Mode (center -> out) =====
@@ -559,6 +632,7 @@ function toggleGuideMode(){
     }
     updateGuide();
     filterPins();   // refresh focus/table for the new mode
+    if(typeof syncOptPanel==="function") syncOptPanel();
 }
 function getGuideList(){
     // Queue mode always covers all 30 wired contacts center-out (ignores cable filter).
@@ -783,6 +857,29 @@ function toggleQueueOrder(){
     }
     guideIdx=-1;
     filterPins();   // applies/removes the single-pin focus + rebuilds table/guide
+    syncOptPanel();
+}
+
+// ===== Floating options panel — mirrors the top-bar checkboxes =====
+const OPT_IDS=["showIds","guideMode","queueOrder","trackingMode","showEmpty","showOther"];
+function toggleOptPanel(){
+    const p=document.getElementById("optPanel");
+    const opening=!p.classList.contains("open");
+    p.classList.toggle("open",opening);
+    if(opening) syncOptPanel();
+}
+// a side toggle just drives the real top-bar checkbox so all existing logic runs
+function mirror(id){
+    const real=document.getElementById(id);
+    real.checked=document.getElementById("m_"+id).checked;
+    real.dispatchEvent(new Event("change"));
+    syncOptPanel(); // other boxes may have auto-changed (queue turns on guide+tracking)
+}
+function syncOptPanel(){
+    OPT_IDS.forEach(id=>{
+        const m=document.getElementById("m_"+id), real=document.getElementById(id);
+        if(m&&real) m.checked=real.checked;
+    });
 }
 
 // ===== CSV download — matches "55round - Sheet3.csv" format =====
@@ -803,6 +900,7 @@ function init(){
     doneState=lsGet(KEY_DONE)||{};
     buildDropdown();buildRound();buildTable();updateProgress();filterPins();
     bottomCableLabel.textContent=cableFilter.options[cableFilter.selectedIndex].textContent.trim();
+    syncOptPanel();
 }
 init();
 </script>
