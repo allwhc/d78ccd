@@ -327,8 +327,17 @@ body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16p
     </div>
     <div class="checkbox-group" id="guideGroup">
         <input type="checkbox" id="guideMode" onchange="toggleGuideMode()">
-        <label for="guideMode">Guide Mode (center&rarr;out)</label>
+        <label for="guideMode">Guide Mode</label>
     </div>
+    <span id="stratWrap" style="display:none;">
+        <select id="guideStrategy" onchange="changeGuideStrategy()" style="min-width:180px;font-size:0.78rem;">
+            <option value="center">Center &rarr; Out (1 pin)</option>
+            <option value="topBottom">Top &rarr; Bottom (row)</option>
+            <option value="bottomTop">Bottom &rarr; Top (row)</option>
+            <option value="leftRight">Left &rarr; Right (col)</option>
+            <option value="rightLeft">Right &rarr; Left (col)</option>
+        </select>
+    </span>
     <div class="checkbox-group" id="queueGroup">
         <input type="checkbox" id="queueOrder" onchange="toggleQueueOrder()">
         <label for="queueOrder">Center-out queue (table)</label>
@@ -428,6 +437,18 @@ const PINS = {"A":{"x":0.1966,"y":-0.6808,"name":"C2-2","signal":"REGISTOR Clock
 const LETTER_ORDER = ["A","B","C","D","E","F","G","H","J","K","L","M","N","P","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","m","n","p","q","r","s","t","u","v","w","x","y","z","AA","BB","CC","DD","EE","FF","GG","HH"];
 const CABLE_ORDER = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"];
 const GUIDE_ORDER = ["HH", "BB", "GG", "CC", "u", "p", "z", "n", "W", "d", "f", "m", "g", "V", "i", "Z", "k", "b", "Y", "T", "B", "U", "A", "C", "S", "P", "E", "N", "D", "R"]; // center -> out
+// Band-sweep strategies: each entry is a ROW (top/bottom) or COLUMN (left/right) of holes.
+const GUIDE_BANDS = {"topBottom":[["U","A"],["T","V","B"],["S","n","W","C"],["m","p","X"],["k","AA","q","Y"],["R","z","BB","r","D"],["j","GG","CC","Z"],["P","y","HH","s","E"],["i","FF","DD","a"],["N","x","EE","t","F"],["h","w","u","b"],["g","v","c"],["M","f","d","G"],["L","e","H"],["K","J"]],"bottomTop":[["K","J"],["L","e","H"],["M","f","d","G"],["g","v","c"],["h","w","u","b"],["N","x","EE","t","F"],["i","FF","DD","a"],["P","y","HH","s","E"],["j","GG","CC","Z"],["R","z","BB","r","D"],["k","AA","q","Y"],["m","p","X"],["S","n","W","C"],["T","V","B"],["U","A"]],"leftRight":[["R","P","N"],["S","k","j","i","h","M"],["T","m","z","y","x","g","L"],["U","n","AA","GG","FF","w","f","K"],["V","p","BB","HH","EE","v","e"],["A","W","q","CC","DD","u","d","J"],["B","X","r","s","t","c","H"],["C","Y","Z","a","b","G"],["D","E","F"]],"rightLeft":[["D","E","F"],["C","Y","Z","a","b","G"],["B","X","r","s","t","c","H"],["A","W","q","CC","DD","u","d","J"],["V","p","BB","HH","EE","v","e"],["U","n","AA","GG","FF","w","f","K"],["T","m","z","y","x","g","L"],["S","k","j","i","h","M"],["R","P","N"]]};
+const STRAT_LABEL = {"center":"Center → Out (1 pin)","topBottom":"Top → Bottom (row)","bottomTop":"Bottom → Top (row)","leftRight":"Left → Right (col)","rightLeft":"Right → Left (col)"};
+let guideStrategy = "center";
+// For the active strategy, return an array of "steps"; each step is an array of wired letters.
+// center -> each step is 1 pin; sweeps -> each step is a whole band; empty bands skipped.
+function buildGuideSteps(){
+    if(guideStrategy==="center") return GUIDE_ORDER.filter(isUsed).map(L=>[L]);
+    const bands=GUIDE_BANDS[guideStrategy]||[];
+    return bands.map(b=>b.filter(isUsed)).filter(b=>b.length>0); // skip empty bands
+}
+let guideStepIdx=0; // index into buildGuideSteps()
 
 // ===== D-Sub 78 geometry: rows 20/19/20/19, pins 1..78 =====
 const DSUB_ROWS=[20,19,20,19];
@@ -475,7 +496,7 @@ let isFront=false, isTracking=false, showIds=false, showEmpty=true, showOther=fa
 let roundEl=null, dsubEl=null;
 let pinEls={};      // letter -> round pin element
 let dsubEls={};     // 78pin number -> dsub pin element
-let doneState={}, guideIdx=-1;
+let doneState={};
 const KEY_DONE="round55_done_v2";
 const SIZE=860, INSERT_R=0.88*SIZE/2;
 
@@ -566,7 +587,7 @@ function onPinClick(L){
         doneState[L]=!doneState[L];lsSet(KEY_DONE,doneState);
         if(pinEls[L]) pinEls[L].classList.toggle("done",doneState[L]);
         const p78=PINS[L].p78; if(dsubEls[p78]) dsubEls[p78].classList.toggle("done",doneState[L]);
-        if(isGuiding) guideIdx=-1;   // recompute next undone pin
+        if(isGuiding) syncStepIdxToAuto();   // advance to next step with undone pins
         updateProgress();filterPins();
         if(isGuiding) updateGuide();
         return;
@@ -624,36 +645,54 @@ function toggleGuideMode(){
     isGuiding=document.getElementById("guideMode").checked;
     guideGroup.classList.toggle("guide-active",isGuiding);
     document.body.classList.toggle("guide-live",isGuiding);
-    guideIdx=-1;
+    syncStepIdxToAuto();
     if(!isGuiding && queueOrder){
         // guide off -> queue has no meaning; turn it off too
         queueOrder=false; document.getElementById("queueOrder").checked=false;
         queueGroup.classList.remove("guide-active");
     }
+    // show the strategy dropdown only while guiding
+    const sw=document.getElementById("stratWrap"); if(sw) sw.style.display=isGuiding?"":"none";
     updateGuide();
     filterPins();   // refresh focus/table for the new mode
     if(typeof syncOptPanel==="function") syncOptPanel();
 }
-function getGuideList(){
-    // Queue mode always covers all 30 wired contacts center-out (ignores cable filter).
-    if(queueOrder) return GUIDE_ORDER.filter(isUsed);
-    const val=cableFilter.value;
-    let allow=null;
-    if(val!=="ALL") allow=new Set(LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===val));
-    return GUIDE_ORDER.filter(L=>!allow||allow.has(L));
+function changeGuideStrategy(){
+    guideStrategy=document.getElementById("guideStrategy").value;
+    syncStepIdxToAuto();
+    updateGuide();
+    filterPins();
 }
+// Flat list of all wired letters in the active strategy order (used by the table / queue).
+function getGuideList(){
+    return [].concat(...buildGuideSteps());
+}
+// The current step (array of letters). Center-out -> single-pin array.
+function getCurrentStep(){
+    const steps=buildGuideSteps();
+    if(!steps.length) return [];
+    if(guideStepIdx>=0 && guideStepIdx<steps.length) return steps[guideStepIdx];
+    // auto: first step that still has an undone pin
+    for(let i=0;i<steps.length;i++){ if(steps[i].some(L=>!doneState[L])) { return steps[i]; } }
+    return [];
+}
+// First (representative) pin of the current step — used for the table/queue row.
 function getNextGuide(){
-    const list=getGuideList();
-    if(guideIdx>=0) return guideIdx<list.length?list[guideIdx]:null;
-    for(const L of list){ if(!doneState[L]) return L; }
-    return null;
+    const step=getCurrentStep();
+    for(const L of step){ if(!doneState[L]) return L; }
+    return step.length?step[0]:null;
+}
+function syncStepIdxToAuto(){
+    const steps=buildGuideSteps();
+    for(let i=0;i<steps.length;i++){ if(steps[i].some(L=>!doneState[L])){ guideStepIdx=i; return; } }
+    guideStepIdx=Math.max(0,steps.length-1);
 }
 function navGuide(dir){
-    const list=getGuideList();if(!list.length) return;
-    const cur=getNextGuide();let pos=cur?list.indexOf(cur):-1;
-    let nx=pos+dir;
-    while(nx>=0&&nx<list.length&&doneState[list[nx]]) nx+=dir;
-    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); if(queueOrder){ filterPins(); } }
+    const steps=buildGuideSteps();if(!steps.length) return;
+    let nx=guideStepIdx+dir;
+    // skip fully-done steps
+    while(nx>=0&&nx<steps.length&&steps[nx].every(L=>doneState[L])) nx+=dir;
+    if(nx>=0&&nx<steps.length){ guideStepIdx=nx; updateGuide(); filterPins(); }
 }
 function ringName(L){
     const r=Math.hypot(PINS[L].x,PINS[L].y);
@@ -664,14 +703,23 @@ function ringName(L){
 function updateGuide(){
     document.querySelectorAll(".pin.guide-next").forEach(e=>e.classList.remove("guide-next"));
     if(!isGuiding){ guideInfo.style.display="none"; return; }
-    const L=getNextGuide();
+    const steps=buildGuideSteps();
+    const step=getCurrentStep();
     guideInfo.style.display="block";
-    if(L===null){ guideInfo.innerHTML="All contacts done!"; return; }
-    if(pinEls[L]) pinEls[L].classList.add("guide-next");
-    const d=PINS[L];
-    const list=getGuideList();const undone=list.filter(x=>!doneState[x]);
-    const pos=undone.indexOf(L)+1;
-    guideInfo.innerHTML='Solder next &rarr; <span style="color:#f0c030;font-size:1.1rem;">Hole '+L+'</span> ('+ringName(L)+') &middot; '+d.name+' &middot; 78-pin '+d.p78+' &middot; '+d.signal+' <span style="color:#6a8ab0;">['+pos+'/'+undone.length+' left]</span> <span style="color:#4a6a88;font-size:0.75rem;">[ &larr; &rarr; navigate ]</span>';
+    const allDone=steps.length && steps.every(b=>b.every(L=>doneState[L]));
+    if(!step.length || allDone){ guideInfo.innerHTML="All contacts done! &#10003;"; return; }
+    // highlight the whole current band
+    step.forEach(L=>{ if(pinEls[L]) pinEls[L].classList.add("guide-next"); });
+    const totalSteps=steps.length, curNo=guideStepIdx+1;
+    if(guideStrategy==="center"){
+        const L=step[0], d=PINS[L];
+        const list=getGuideList(); const undone=list.filter(x=>!doneState[x]);
+        const pos=undone.indexOf(L)+1;
+        guideInfo.innerHTML='Solder next &rarr; <span style="color:#f0c030;font-size:1.1rem;">Hole '+L+'</span> ('+ringName(L)+') &middot; '+d.name+' &middot; 78-pin '+d.p78+' &middot; '+d.signal+' <span style="color:#6a8ab0;">['+pos+'/'+undone.length+' left]</span> <span style="color:#4a6a88;font-size:0.75rem;">[ &larr; &rarr; ]</span>';
+    } else {
+        const list=step.map(L=>L+'(78:'+PINS[L].p78+')').join(', ');
+        guideInfo.innerHTML=STRAT_LABEL[guideStrategy]+' &mdash; band <span style="color:#f0c030;font-size:1.1rem;">'+curNo+'/'+totalSteps+'</span>: <span style="color:#f0c030">'+list+'</span> <span style="color:#4a6a88;font-size:0.75rem;">[ &larr; &rarr; next band ]</span>';
+    }
 }
 document.addEventListener("keydown",e=>{
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) return;
@@ -707,22 +755,25 @@ function filterPins(){
     const val=cableFilter.value;
     bottomCableLabel.textContent=cableFilter.options[cableFilter.selectedIndex].textContent.trim();
 
-    // Queue mode: ignore cable filter — focus ONLY the current center-out pin,
-    // every other wired pin shown faint for context.
-    if(queueOrder && isGuiding){
-        const cur=getNextGuide();
+    // Focus mode: light ONLY the current step (1 pin for center-out queue, or a whole
+    // row/column band for the sweep strategies). All other wired pins faint for context.
+    const focusMode = isGuiding && (queueOrder || guideStrategy!=="center");
+    if(focusMode){
+        const stepSet=new Set(getCurrentStep());
         LETTER_ORDER.forEach(L=>{
             const el=pinEls[L];if(!el) return;
             el.classList.remove("highlighted");
             if(!isUsed(L)){ return; }
-            if(L===cur){ el.classList.remove("dimmed","q-faint"); }
+            if(stepSet.has(L)){ el.classList.remove("dimmed","q-faint"); }
             else { el.classList.add("dimmed","q-faint"); }
             const dp=dsubEls[PINS[L].p78];
-            if(dp){ dp.classList.toggle("dimmed", L!==cur); dp.classList.toggle("q-faint", L!==cur); }
+            if(dp){ const off=!stepSet.has(L); dp.classList.toggle("dimmed",off); dp.classList.toggle("q-faint",off); }
         });
         const tot=LETTER_ORDER.filter(isUsed).length;
         const doneN=LETTER_ORDER.filter(L=>isUsed(L)&&doneState[L]).length;
-        statsBar.innerHTML="Queue focus: 1 pin lit &middot; <span>"+tot+"</span> total"+(isTracking?" &mdash; <span style='color:#2ecc71'>"+doneN+" done</span>":"");
+        const litN=[...stepSet].length;
+        const label = guideStrategy==="center" ? "1 pin lit" : (litN+" pins lit (band)");
+        statsBar.innerHTML="Focus: "+label+" &middot; <span>"+tot+"</span> total"+(isTracking?" &mdash; <span style='color:#2ecc71'>"+doneN+" done</span>":"");
         cableLegend.classList.remove("visible");
         updateNotes("ALL");
         updateGuide(); buildTable();
@@ -755,7 +806,7 @@ function filterPins(){
         buildLegend(letters);
     }
     updateNotes(val);
-    if(isGuiding){ guideIdx=-1; updateGuide(); if(queueOrder) buildTable(); }
+    if(isGuiding){ updateGuide(); buildTable(); }
 }
 function buildLegend(letters){
     cableLegend.innerHTML="";
@@ -799,7 +850,8 @@ function resetAllDone(){
     if(!confirm("Reset all tracking?")) return;
     doneState={};lsSet(KEY_DONE,doneState);
     document.querySelectorAll(".pin.done").forEach(e=>e.classList.remove("done"));
-    updateProgress();filterPins();if(isGuiding){guideIdx=-1;updateGuide();}
+    if(isGuiding) syncStepIdxToAuto();
+    updateProgress();filterPins();if(isGuiding){updateGuide();}
 }
 
 // ===== mapping table =====
@@ -855,7 +907,7 @@ function toggleQueueOrder(){
             toggleTrackingMode();   // enables tracking (sets classes, progress bar, etc.)
         }
     }
-    guideIdx=-1;
+    syncStepIdxToAuto();
     filterPins();   // applies/removes the single-pin focus + rebuilds table/guide
     syncOptPanel();
 }
