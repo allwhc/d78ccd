@@ -95,6 +95,9 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
     transition:opacity 0.3s ease,filter 0.3s ease;
 }
 .pin.dimmed{opacity:0.1;filter:grayscale(1);pointer-events:none;}
+/* queue-mode faint: visible enough to keep context, but clearly unfocused */
+.pin.q-faint{opacity:0.16 !important;filter:grayscale(0.85) !important;pointer-events:auto;}
+.pin.q-faint .hole-letter{opacity:0.5;}
 .pin.highlighted .outer{box-shadow:0 0 0 3px rgba(58,123,213,0.6),0 2px 5px rgba(0,0,0,0.4);}
 
 /* cross-link highlight (from other connector) */
@@ -312,7 +315,7 @@ table.map tr.q-done td.qpos{color:#2ecc71;}
 <div class="map-table-wrap">
     <table class="map" id="mapTable">
         <thead><tr>
-            <th id="qposHead" style="display:none;">#</th><th>78-pin</th><th>55-round</th><th>Name</th><th>Colour</th><th>Cable type</th><th>Description</th>
+            <th id="qposHead" style="display:none;">Step</th><th>78-pin</th><th>55-round</th><th>Name</th><th>Colour</th><th>Cable type</th><th>Description</th>
         </tr></thead>
         <tbody id="mapBody"></tbody>
     </table>
@@ -464,9 +467,9 @@ function onPinClick(L){
         doneState[L]=!doneState[L];lsSet(KEY_DONE,doneState);
         if(pinEls[L]) pinEls[L].classList.toggle("done",doneState[L]);
         const p78=PINS[L].p78; if(dsubEls[p78]) dsubEls[p78].classList.toggle("done",doneState[L]);
+        if(isGuiding) guideIdx=-1;   // recompute next undone pin
         updateProgress();filterPins();
-        if(isGuiding){ guideIdx=-1; updateGuide(); }
-        if(queueOrder) buildTable();
+        if(isGuiding) updateGuide();
         return;
     }
     crossLink(L);
@@ -526,9 +529,11 @@ function toggleGuideMode(){
         queueGroup.classList.remove("guide-active");
     }
     updateGuide();
-    buildTable();
+    filterPins();   // refresh focus/table for the new mode
 }
 function getGuideList(){
+    // Queue mode always covers all 30 wired contacts center-out (ignores cable filter).
+    if(queueOrder) return GUIDE_ORDER.filter(isUsed);
     const val=cableFilter.value;
     let allow=null;
     if(val!=="ALL") allow=new Set(LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===val));
@@ -545,7 +550,7 @@ function navGuide(dir){
     const cur=getNextGuide();let pos=cur?list.indexOf(cur):-1;
     let nx=pos+dir;
     while(nx>=0&&nx<list.length&&doneState[list[nx]]) nx+=dir;
-    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); if(queueOrder) buildTable(); }
+    if(nx>=0&&nx<list.length){ guideIdx=nx; updateGuide(); if(queueOrder){ filterPins(); } }
 }
 function ringName(L){
     const r=Math.hypot(PINS[L].x,PINS[L].y);
@@ -595,6 +600,31 @@ function navCable(dir){
 function filterPins(){
     const val=cableFilter.value;
     bottomCableLabel.textContent=cableFilter.options[cableFilter.selectedIndex].textContent.trim();
+
+    // Queue mode: ignore cable filter — focus ONLY the current center-out pin,
+    // every other wired pin shown faint for context.
+    if(queueOrder && isGuiding){
+        const cur=getNextGuide();
+        LETTER_ORDER.forEach(L=>{
+            const el=pinEls[L];if(!el) return;
+            el.classList.remove("highlighted");
+            if(!isUsed(L)){ return; }
+            if(L===cur){ el.classList.remove("dimmed","q-faint"); }
+            else { el.classList.add("dimmed","q-faint"); }
+            const dp=dsubEls[PINS[L].p78];
+            if(dp){ dp.classList.toggle("dimmed", L!==cur); dp.classList.toggle("q-faint", L!==cur); }
+        });
+        const tot=LETTER_ORDER.filter(isUsed).length;
+        const doneN=LETTER_ORDER.filter(L=>isUsed(L)&&doneState[L]).length;
+        statsBar.innerHTML="Queue focus: 1 pin lit &middot; <span>"+tot+"</span> total"+(isTracking?" &mdash; <span style='color:#2ecc71'>"+doneN+" done</span>":"");
+        cableLegend.classList.remove("visible");
+        updateNotes("ALL");
+        updateGuide(); buildTable();
+        return;
+    }
+    // not in queue mode -> clear any leftover faint class
+    LETTER_ORDER.forEach(L=>{ if(pinEls[L]) pinEls[L].classList.remove("q-faint"); const dp=dsubEls[PINS[L].p78]; if(dp) dp.classList.remove("q-faint"); });
+
     let active=null;
     if(val!=="ALL") active=new Set(LETTER_ORDER.filter(L=>isUsed(L)&&PINS[L].cable===val));
     let shown=0;
@@ -667,60 +697,53 @@ function resetAllDone(){
 }
 
 // ===== mapping table =====
-// Default: sorted by 78-pin.  Queue order (when "Center-out queue" on & Guide Mode on):
-// rows follow the GUIDE_ORDER (inner-most hole first -> outer), pending pins first with
-// the current "next" pin at the very top, done pins greyed at the bottom.
-function orderedTableLetters(){
-    const used=LETTER_ORDER.filter(isUsed);
-    if(!(queueOrder && isGuiding)){
-        return used.slice().sort((a,b)=>PINS[a].p78-PINS[b].p78);
-    }
-    // center-out solder queue over ALL 30 wired contacts (ignores cable filter, by request)
-    const inGuide=GUIDE_ORDER.filter(isUsed);
-    const next=getNextGuide();
-    const pending=inGuide.filter(L=>!doneState[L]);
-    const done=inGuide.filter(L=>doneState[L]);
-    // rotate pending so the current "next" pin leads
-    if(next){
-        const i=pending.indexOf(next);
-        if(i>0) pending.push(...pending.splice(0,i));
-    }
-    return pending.concat(done);
-}
+// Default: full table sorted by 78-pin.
+// Queue mode (Center-out queue + Guide Mode): show ONLY the current pin to solder —
+// one row at a time. Pressing Next / arrow-nav / marking done advances to the next
+// pin in center-out order (inner-most hole first -> outer). All other pins hidden.
 function buildTable(){
     const tb=document.getElementById("mapBody");tb.innerHTML="";
     const queue = queueOrder && isGuiding;
-    const letters=orderedTableLetters();
-    const next=queue?getNextGuide():null;
-    let seq=1;
-    letters.forEach(L=>{
+    const qh=document.getElementById("qposHead");
+    if(qh) qh.style.display = queue ? "" : "none";
+
+    if(queue){
+        const inGuide=GUIDE_ORDER.filter(isUsed);          // all 30, center-out
+        const total=inGuide.length;
+        const next=getNextGuide();                          // the single current pin
+        if(next===null){
+            const tr=document.createElement("tr");
+            tr.innerHTML="<td class='qpos'>&#10003;</td><td colspan='6' style='color:#2ecc71;font-weight:700'>All contacts soldered &#10003;</td>";
+            tb.appendChild(tr);
+            return;
+        }
+        const seq=inGuide.indexOf(next)+1;                  // position in the center-out sequence
+        const d=PINS[next];
+        const tr=document.createElement("tr");tr.id="row-"+next;tr.classList.add("q-next");
+        tr.innerHTML="<td class='qpos'>"+seq+"/"+total+"</td><td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+next+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
+        tr.onclick=()=>crossLink(next);
+        tb.appendChild(tr);
+        return;
+    }
+
+    // full table (default)
+    LETTER_ORDER.filter(isUsed).sort((a,b)=>PINS[a].p78-PINS[b].p78).forEach(L=>{
         const d=PINS[L];const tr=document.createElement("tr");tr.id="row-"+L;
-        const isDone=!!doneState[L];
-        if(queue && isDone) tr.classList.add("q-done");
-        if(queue && L===next) tr.classList.add("q-next");
-        const posCell = queue
-            ? "<td class='qpos'>"+(isDone?"&#10003;":(seq++))+"</td>"
-            : "";
-        tr.innerHTML=posCell+"<td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
+        tr.innerHTML="<td style='color:#9fe8c0'>"+d.p78+"</td><td style='color:#ffd86b;font-weight:700'>"+L+"</td><td>"+d.name+"</td><td>"+(d.oc||"")+"</td><td>"+d.ctype+"</td><td>"+d.signal+"</td>";
         tr.onclick=()=>crossLink(L);
         tb.appendChild(tr);
     });
-    // show/hide the "#" header column
-    const qh=document.getElementById("qposHead");
-    if(qh) qh.style.display = queue ? "" : "none";
-    if(queue && next){
-        const tr=document.getElementById("row-"+next);
-        if(tr) tr.scrollIntoView({block:"nearest"});
-    }
 }
 function toggleQueueOrder(){
     queueOrder=document.getElementById("queueOrder").checked;
     queueGroup.classList.toggle("guide-active",queueOrder);
     if(queueOrder && !isGuiding){
         // queue only makes sense with Guide Mode; turn it on
-        document.getElementById("guideMode").checked=true; toggleGuideMode();
+        document.getElementById("guideMode").checked=true;
+        isGuiding=true; guideGroup.classList.add("guide-active");
     }
-    buildTable();
+    guideIdx=-1;
+    filterPins();   // applies/removes the single-pin focus + rebuilds table/guide
 }
 
 // ===== CSV download — matches "55round - Sheet3.csv" format =====
