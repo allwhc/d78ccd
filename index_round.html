@@ -594,6 +594,9 @@ function buildDropdown(){
     });
 }
 function navCable(dir){
+    // In queue/guide mode the Prev/Next buttons step the current solder pin,
+    // not the cable dropdown.
+    if(isGuiding){ navGuide(dir); return; }
     const opts=cableFilter.options;let idx=cableFilter.selectedIndex+dir;
     if(idx>=0&&idx<opts.length){cableFilter.selectedIndex=idx;filterPins();}
 }
@@ -737,10 +740,16 @@ function buildTable(){
 function toggleQueueOrder(){
     queueOrder=document.getElementById("queueOrder").checked;
     queueGroup.classList.toggle("guide-active",queueOrder);
-    if(queueOrder && !isGuiding){
-        // queue only makes sense with Guide Mode; turn it on
-        document.getElementById("guideMode").checked=true;
-        isGuiding=true; guideGroup.classList.add("guide-active");
+    if(queueOrder){
+        // queue drives a solder workflow -> turn on Guide Mode AND Pin Tracking
+        if(!isGuiding){
+            document.getElementById("guideMode").checked=true;
+            isGuiding=true; guideGroup.classList.add("guide-active");
+        }
+        if(!isTracking){
+            document.getElementById("trackingMode").checked=true;
+            toggleTrackingMode();   // enables tracking (sets classes, progress bar, etc.)
+        }
     }
     guideIdx=-1;
     filterPins();   // applies/removes the single-pin focus + rebuilds table/guide
