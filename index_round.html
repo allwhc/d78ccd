@@ -645,6 +645,7 @@ function toggleGuideMode(){
     isGuiding=document.getElementById("guideMode").checked;
     guideGroup.classList.toggle("guide-active",isGuiding);
     document.body.classList.toggle("guide-live",isGuiding);
+    if(isGuiding) guideStepIdx=0;   // start at the first band
     syncStepIdxToAuto();
     if(!isGuiding && queueOrder){
         // guide off -> queue has no meaning; turn it off too
@@ -659,7 +660,8 @@ function toggleGuideMode(){
 }
 function changeGuideStrategy(){
     guideStrategy=document.getElementById("guideStrategy").value;
-    syncStepIdxToAuto();
+    guideStepIdx=0;            // new strategy -> start from its first band
+    syncStepIdxToAuto();       // ...skipping any already-complete leading bands
     updateGuide();
     filterPins();
 }
@@ -682,10 +684,21 @@ function getNextGuide(){
     for(const L of step){ if(!doneState[L]) return L; }
     return step.length?step[0]:null;
 }
+// Stay on the current band until ALL its pins are done, then advance forward to the
+// next band that still has an undone pin. Never jumps backward on its own.
 function syncStepIdxToAuto(){
     const steps=buildGuideSteps();
+    if(!steps.length){ guideStepIdx=0; return; }
+    if(guideStepIdx<0) guideStepIdx=0;
+    if(guideStepIdx>=steps.length) guideStepIdx=steps.length-1;
+    // current band still has work -> stay put
+    if(steps[guideStepIdx] && steps[guideStepIdx].some(L=>!doneState[L])) return;
+    // current band complete -> move forward to the next incomplete band
+    for(let i=guideStepIdx+1;i<steps.length;i++){ if(steps[i].some(L=>!doneState[L])){ guideStepIdx=i; return; } }
+    // nothing ahead -> look for any remaining incomplete band (wrap to earliest)
     for(let i=0;i<steps.length;i++){ if(steps[i].some(L=>!doneState[L])){ guideStepIdx=i; return; } }
-    guideStepIdx=Math.max(0,steps.length-1);
+    // all done -> keep at last band
+    guideStepIdx=steps.length-1;
 }
 function navGuide(dir){
     const steps=buildGuideSteps();if(!steps.length) return;
