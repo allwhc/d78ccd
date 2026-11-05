@@ -80,19 +80,19 @@ select:focus{outline:none;border-color:#3a7bd5;box-shadow:0 0 0 2px rgba(58,123,
     background:radial-gradient(circle at 50% 45%, #1d3858 0%, #15304e 70%, #102742 100%);
     border:2px solid #24547f;box-shadow:inset 0 0 50px rgba(0,0,0,0.4);
 }
+/* Front/Rear mirror only. Rotation is done by recomputing pin positions in JS so
+   the hole positions turn while every letter/name stays upright and readable. */
 .connector-round.front-view{transform:scaleX(-1);}
 .connector-round.front-view .inner{transform:translate(-50%,-50%) scaleX(-1);}
 .connector-round.front-view .hole-letter{transform:translateX(-50%) scaleX(-1);}
 .connector-round.tracking-mode .pin{cursor:crosshair;}
 
-.keyway{position:absolute;top:-7px;width:30px;height:30px;background:#0a1628;border:7px solid #1a4a78;border-bottom:none;border-radius:7px 7px 0 0;z-index:6;}
-.keyway.k1{left:calc(50% - 46px);}
-.keyway.k2{left:calc(50% + 16px);}
+.keyway{position:absolute;width:30px;height:30px;background:#0a1628;border:5px solid #1a4a78;border-radius:7px;z-index:6;box-shadow:0 0 8px rgba(0,0,0,0.5);}
 
 .pin{
     position:absolute;width:56px;height:56px;cursor:pointer;
     transform:translate(-50%,-50%);
-    transition:opacity 0.3s ease,filter 0.3s ease;
+    transition:left 0.4s ease,top 0.4s ease,opacity 0.3s ease,filter 0.3s ease;
 }
 .pin.dimmed{opacity:0.1;filter:grayscale(1);pointer-events:none;}
 /* queue-mode faint: visible enough to keep context, but clearly unfocused */
@@ -311,6 +311,7 @@ body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16p
 <div class="toolbar">
     <button onclick="window.print()">&#128424; Print</button>
     <button onclick="toggleView()">&#128260; Front/Rear</button>
+    <button onclick="rotate90()" title="Rotate the connector 90&deg; (letters stay upright)"><span id="rotLabel">&#8635; Rotate 0&deg;</span></button>
     <div class="sep"></div>
     <div class="filter-group">
         <span class="filter-label">Cable:</span>
@@ -392,6 +393,7 @@ body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16p
     <label class="opt-row"><input type="checkbox" id="m_showOther"  onchange="mirror('showOther')">    Show 78-pin (other end)</label>
     <div class="opt-sep"></div>
     <button class="opt-btn" onclick="toggleView()">&#128260; Front / Rear</button>
+    <button class="opt-btn" onclick="rotate90()"><span id="rotLabel2">&#8635; Rotate 0&deg;</span></button>
     <button class="opt-btn" onclick="downloadCSV()">&#128229; Download CSV</button>
     <button class="opt-btn opt-btn-danger" onclick="resetAllDone()">&#10226; Reset Tracking</button>
 </div>
@@ -493,6 +495,8 @@ const bottomCableLabel=document.getElementById("bottomCableLabel");
 const guideInfo=document.getElementById("guideInfo");
 
 let isFront=false, isTracking=false, showIds=false, showEmpty=true, showOther=false, isGuiding=false, queueOrder=false;
+let rotation=0; // connector rotation in degrees: 0 / 90 / 180 / 270
+let keyEls=[];
 let roundEl=null, dsubEl=null;
 let pinEls={};      // letter -> round pin element
 let dsubEls={};     // 78pin number -> dsub pin element
@@ -505,18 +509,25 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function isUsed(L){ return PINS[L] && PINS[L].p78!=null; }
 function pinColor(L){ const d=PINS[L]; return resolveColor(d.oc||d.ic||""); }
 
+// rotate a normalized (x,y) about the insert centre by the current rotation (deg)
+function rot(x,y){
+    const a=rotation*Math.PI/180, c=Math.cos(a), s=Math.sin(a);
+    return [x*c - y*s, x*s + y*c];
+}
 // ===== build round connector =====
 function buildRound(){
     roundWrap.innerHTML="";pinEls={};
     const el=document.createElement("div");
     el.className="connector-round"+(isFront?" front-view":"")+(isTracking?" tracking-mode":"")+(showIds?" show-ids":"");
     el.id="roundConn";el.style.width=SIZE+"px";el.style.height=SIZE+"px";
-    const k1=document.createElement("div");k1.className="keyway k1";el.appendChild(k1);
-    const k2=document.createElement("div");k2.className="keyway k2";el.appendChild(k2);
+    // keyways — positioned by JS so they rotate with the shell
+    keyEls=[document.createElement("div"),document.createElement("div")];
+    keyEls.forEach(k=>{k.className="keyway";el.appendChild(k);});
     const cx=SIZE/2,cy=SIZE/2;
     LETTER_ORDER.forEach(L=>{
         const d=PINS[L];
-        const px=cx+d.x*INSERT_R, py=cy+d.y*INSERT_R;
+        const [rx,ry]=rot(d.x,d.y);
+        const px=cx+rx*INSERT_R, py=cy+ry*INSERT_R;
         const used=isUsed(L);
         const pin=document.createElement("div");
         pin.className="pin"+(used?"":" empty");
@@ -536,7 +547,7 @@ function buildRound(){
         el.appendChild(pin);pinEls[L]=pin;
     });
     roundWrap.appendChild(el);roundEl=el;
-    applyEmpty();refreshRoundLabels();
+    applyEmpty();refreshRoundLabels();applyRoundRotation();
 }
 
 function refreshRoundLabels(){
@@ -619,6 +630,36 @@ function toggleView(){
     if(roundEl) roundEl.classList.toggle("front-view",isFront);
     if(dsubEl) dsubEl.classList.toggle("front-view",isFront);
     viewBadge.textContent=isFront?"FRONT / MATING VIEW":"REAR / SOLDER VIEW";
+}
+// Rotate the round connector in 90-degree steps (full 360). The body + holes turn,
+// but each letter/name counter-rotates (CSS) so labels always stay upright/readable.
+function rotate90(){
+    rotation=(rotation+90)%360;
+    applyRoundRotation();
+}
+function applyRoundRotation(){
+    const cx=SIZE/2, cy=SIZE/2;
+    // reposition every pin to its rotated coordinate (text stays upright)
+    LETTER_ORDER.forEach(L=>{
+        const el=pinEls[L]; if(!el) return;
+        const d=PINS[L]; const [rx,ry]=rot(d.x,d.y);
+        el.style.left=(cx+rx*INSERT_R)+"px";
+        el.style.top=(cy+ry*INSERT_R)+"px";
+    });
+    // reposition the two keyway notches on the shell edge (normalized r~1.0 at top)
+    if(keyEls.length===2){
+        const notch=[{x:-0.075,y:-1.0},{x:0.075,y:-1.0}];
+        const R=SIZE/2; // shell radius ~ half the box
+        keyEls.forEach((k,i)=>{
+            const [rx,ry]=rot(notch[i].x,notch[i].y);
+            k.style.left=(cx+rx*R-15)+"px";
+            k.style.top=(cy+ry*R-15)+"px";
+            k.style.right="auto";
+        });
+    }
+    const t="&#8635; Rotate "+rotation+"&deg;";
+    const a=document.getElementById("rotLabel"); if(a) a.innerHTML=t;
+    const b=document.getElementById("rotLabel2"); if(b) b.innerHTML=t;
 }
 function toggleIds(){ showIds=document.getElementById("showIds").checked; refreshRoundLabels(); if(typeof syncOptPanel==="function") syncOptPanel(); }
 function toggleEmpty(){ showEmpty=document.getElementById("showEmpty").checked; applyEmpty(); if(typeof syncOptPanel==="function") syncOptPanel(); }
