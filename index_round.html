@@ -211,22 +211,27 @@ table.map tr.q-done td.qpos{color:#2ecc71;}
 
 /* Floating Prev/Next buttons pinned to the screen edges */
 .float-nav{
-    position:fixed;top:50%;transform:translateY(-50%);z-index:50;
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-    width:62px;height:88px;padding:0;
+    position:fixed;top:50%;left:auto;right:auto;z-index:50;
+    box-sizing:border-box;flex:0 0 auto;
+    width:62px;min-width:62px;max-width:62px;height:88px;min-height:88px;max-height:88px;
+    padding:0;margin:0;overflow:hidden;white-space:nowrap;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     background:rgba(18,37,62,0.82);border:1px solid #2a4a6e;border-radius:12px;
-    color:#a0c4e8;cursor:pointer;backdrop-filter:blur(3px);
-    box-shadow:0 4px 18px rgba(0,0,0,0.45);transition:all 0.15s;
+    color:#a0c4e8;cursor:pointer;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    box-shadow:0 4px 18px rgba(0,0,0,0.45);
+    transform:translateY(-50%);
+    transition:background 0.15s,border-color 0.15s,color 0.15s,box-shadow 0.15s;
+    font-size:16px;line-height:1;
 }
-.float-nav:hover{background:#1a3a6a;border-color:#3a7bd5;color:#fff;transform:translateY(-50%) scale(1.06);}
-.float-nav:active{transform:translateY(-50%) scale(0.97);}
-.float-nav .fn-arrow{font-size:1.7rem;line-height:1;}
-.float-nav .fn-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;letter-spacing:1px;}
+.float-nav:hover{background:#1a3a6a;border-color:#3a7bd5;color:#fff;}
+.float-nav:active{background:#16305a;}
+.float-nav .fn-arrow{font-size:1.7rem;line-height:1;pointer-events:none;}
+.float-nav .fn-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;letter-spacing:1px;pointer-events:none;}
 .float-left{left:14px;}
 .float-right{right:14px;}
 /* brighter when Guide/Queue is active, to signal they step pins */
 body.guide-live .float-nav{border-color:#f0c030;color:#f0c030;box-shadow:0 0 16px rgba(240,192,48,0.35);}
-@media (max-width:820px){ .float-nav{width:48px;height:72px;} .float-nav .fn-arrow{font-size:1.3rem;} }
+@media (max-width:820px){ .float-nav{width:48px;min-width:48px;max-width:48px;height:72px;min-height:72px;max-height:72px;} .float-nav .fn-arrow{font-size:1.3rem;} }
 
 /* Floating options tab + slide-out panel (right side) */
 .opt-tab{
